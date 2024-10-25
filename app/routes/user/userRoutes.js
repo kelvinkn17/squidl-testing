@@ -298,5 +298,103 @@ export const userRoutes = (app, _, done) => {
     }
   );
 
+  // TODO use real stealth addresses from user
+  app.get(
+    "/wallet-assets/:aliasId",
+    { preHandler: [authMiddleware] },
+    async function (req, reply) {
+      const { aliasId } = req.params;
+      const { id } = req.user;
+
+      if (!id) {
+        return reply.status(400).send({
+          message: "User id is required",
+        });
+      }
+
+      try {
+        const user = await prismaClient.user.findUnique({
+          where: {
+            id: id,
+          },
+        });
+
+        if (!user) {
+          return reply.status(404).send({
+            message: "User not found",
+          });
+        }
+
+        const alias = await prismaClient.userAlias.findUnique({
+          where: { id: aliasId },
+          include: {
+            stealthAddresses: true,
+          },
+        });
+
+        // TODO use real stealth addresses from user
+        // const stealthAddresses = alias.stealthAddresses;
+
+        // TODO replace with real assets
+
+        const dummyTokens = [
+          {
+            address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            name: "USD Coin",
+            symbol: "USDC",
+            amount: 1,
+            decimals: 6,
+            logo: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
+          },
+        ];
+
+        // Fetch token price
+        const tokensWithStats = await prismaClient.token.findMany({
+          where: {
+            address: { in: dummyTokens.map((token) => token.address) },
+          },
+          include: {
+            stats: true,
+          },
+        });
+
+        // Map tokens to include prices and prepare the response
+        // TODO replace with real assets
+        const tokenAssets = dummyTokens.map((dummyToken) => {
+          const tokenWithStat = tokensWithStats.find(
+            (t) => t.address === dummyToken.address
+          );
+
+          const priceUSD = tokenWithStat?.stats?.priceUSD || 1;
+
+          // TODO add chain logo
+          return {
+            address: dummyToken.address,
+            name: dummyToken.name,
+            symbol: dummyToken.symbol,
+            amount: dummyToken.amount,
+            logo: dummyToken.logo,
+            priceUSD,
+            amountUSD: dummyToken.amount * priceUSD,
+          };
+        });
+
+        const result = {
+          tokenAssets,
+        };
+
+        return reply.send({
+          message: "Success getting user wallet assets",
+          data: result,
+        });
+      } catch (e) {
+        console.log("Error getting wallet assets", e);
+        return reply.status(500).send({
+          message: "Error getting wallet assets",
+        });
+      }
+    }
+  );
+
   done();
 };

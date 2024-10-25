@@ -10,13 +10,17 @@ import { stealthAddressRoutes } from "./app/routes/stealth-address/index.js";
 import { priceWorker } from "./app/workers/priceWorkers.js";
 import { userRoutes } from "./app/routes/user/userRoutes.js";
 import { stealthSignerGenerateStealthAddress } from "./app/lib/contracts/oasis/oasisContract.js";
-import { oneInchGetGeneralValue, oneInchGetValueChart } from "./app/routes/stealth-address/helpers/oneInchHelpers.js";
+import {
+  oneInchGetGeneralValue,
+  oneInchGetValueChart,
+} from "./app/routes/stealth-address/helpers/oneInchHelpers.js";
+import { tokenPriceWorker } from "./app/workers/tokenPriceWorkers.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const fastify = Fastify({
-  logger: false
+  logger: false,
 });
 
 fastify.register(FastifyCors, {
@@ -54,6 +58,7 @@ fastify.register(userRoutes, {
 
 /* --------------------------------- Workers -------------------------------- */
 // fastify.register(priceWorker);
+fastify.register(tokenPriceWorker);
 
 const start = async () => {
   try {

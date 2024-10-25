@@ -144,7 +144,9 @@ export const stealthAddressRoutes = (app, _, done) => {
           where: {
             alias: alias,
             user: {
-              address: address,
+              wallet: {
+                address: address,
+              },
             },
           },
         });
