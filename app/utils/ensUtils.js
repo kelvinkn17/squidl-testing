@@ -65,8 +65,6 @@ export async function handleQuery({
     throw new Error(`Unsupported query function ${functionName}`);
   }
 
-  console.log('nameData', nameData);
-
   let res;
   switch (functionName) {
     case 'addr': {

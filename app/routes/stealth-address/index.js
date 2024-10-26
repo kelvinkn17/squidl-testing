@@ -78,6 +78,31 @@ export const stealthAddressRoutes = (app, _, done) => {
     }
   );
 
+  app.get('/aliases/check', {
+    preHandler: [authMiddleware],
+  }, async (req, res) => {
+    // Check if the alias is available
+    try {
+      const { alias } = req.query;
+      const userAlias = await prismaClient.userAlias.findFirst({
+        where: {
+          alias: alias,
+        },
+      });
+
+      if (userAlias) {
+        return false
+      } else {
+        return true
+      }
+    } catch (error) {
+      console.error("Error while checking alias:", error);
+      return res.status(500).send({
+        message: "Error while checking alias",
+      });
+    }
+  })
+
   // GET /aliases/:id , to get the detailed information of a certain alias
   app.get(
     "/aliases/:id",
