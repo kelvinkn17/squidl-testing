@@ -349,6 +349,7 @@ export const stealthAddressRoutes = (app, _, done) => {
       const alias = name.split(".")[name.split(".").length - 3];
 
       // Random resolved address
+      // TODO: Determine the resolved address based on the alias saved in the database
       const resolvedAddress = ethers.Wallet.createRandom().address;
 
       const result = await handleQuery({
