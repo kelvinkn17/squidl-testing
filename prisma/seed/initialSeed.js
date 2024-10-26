@@ -1,14 +1,14 @@
 import { PrismaClient } from "@prisma/client";
-import { CHAINS } from '../../app/config.js';
+import { CHAINS } from "../../app/config.js";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Testnet chains
-  for(const chain of CHAINS.testnet){
+  // Upsert chains (Testnet and Mainnet)
+  for (const chain of CHAINS.testnet) {
     await prisma.chain.upsert({
       where: {
-        id: chain.id, 
+        id: chain.id,
       },
       create: {
         id: chain.id,
@@ -26,18 +26,78 @@ async function main() {
         nativeToken: chain.nativeToken,
         blockExplorerUrl: chain.blockExplorerUrl,
         isTestnet: true,
-      }
-    })
+      },
+    });
+  }
+
+  for (const chain of CHAINS.mainnet) {
+    await prisma.chain.upsert({
+      where: {
+        id: chain.id,
+      },
+      create: {
+        id: chain.id,
+        name: chain.name,
+        chainlistUrl: chain.chainlistUrl,
+        rpcUrl: chain.rpcUrl,
+        nativeToken: chain.nativeToken,
+        blockExplorerUrl: chain.blockExplorerUrl,
+        isTestnet: false,
+      },
+      update: {
+        name: chain.name,
+        chainlistUrl: chain.chainlistUrl,
+        rpcUrl: chain.rpcUrl,
+        nativeToken: chain.nativeToken,
+        blockExplorerUrl: chain.blockExplorerUrl,
+        isTestnet: false,
+      },
+    });
+  }
+
+  // Seed USDC token
+  const usdcToken = {
+    address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // USDC address on Ethereum Mainnet
+    name: "USD Coin",
+    symbol: "USDC",
+    decimals: 6,
+    logo: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
+  };
+
+  // Insert USDC for each relevant chain (mainnet or testnet)
+  for (const chain of [...CHAINS.mainnet, ...CHAINS.testnet]) {
+    await prisma.token.upsert({
+      where: {
+        chainId_address: {
+          chainId: chain.id,
+          address: usdcToken.address,
+        },
+      },
+      create: {
+        chainId: chain.id,
+        address: usdcToken.address,
+        name: usdcToken.name,
+        symbol: usdcToken.symbol,
+        decimals: usdcToken.decimals,
+        logo: usdcToken.logo,
+      },
+      update: {
+        name: usdcToken.name,
+        symbol: usdcToken.symbol,
+        decimals: usdcToken.decimals,
+        logo: usdcToken.logo,
+      },
+    });
   }
 
   await prisma.$disconnect();
-
-  console.log("Initial seed completed successfully");
+  console.log("Initial seed with USDC completed successfully");
 }
 
 main()
   .catch((e) => {
-    throw e;
+    console.error(e);
+    process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();

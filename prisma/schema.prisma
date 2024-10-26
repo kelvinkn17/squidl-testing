@@ -32,13 +32,33 @@ model Chain {
 model User {
   id String @id @default(cuid())
 
-  address  String @unique
   username String
+
+  wallet UserWallet?
 
   aliases UserAlias[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model UserWallet {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type UserWalletType
+
+  address String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserWalletType {
+  EOA
+  SOCIAL
 }
 
 model UserAlias {
@@ -87,13 +107,26 @@ model Token {
   name     String
   symbol   String
   decimals Int
+  logo     String?
 
   transactions Transaction[]
+
+  stats TokenStats?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([chainId, address])
+}
+
+model TokenStats {
+  id      String @id @default(cuid())
+  tokenId String @unique
+  token   Token  @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  priceUSD  Float?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }
 
 model CommonTokenPrice {
