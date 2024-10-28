@@ -33,11 +33,11 @@ export const authRoutes = (app, _, done) => {
             data: {
               wallet: {
                 create: {
-                  address,
+                  address: address,
                   type: walletType,
                 },
               },
-              username,
+              username: username,
             },
           });
 

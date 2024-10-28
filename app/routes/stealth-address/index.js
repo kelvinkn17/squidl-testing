@@ -8,7 +8,7 @@ import {
 } from "../../utils/ensUtils.js";
 import { getNextAliasKey } from "./helpers/aliasHelpers.js";
 import { prismaClient } from "../../lib/db/prisma.js";
-import { stealthSignerGenerateStealthAddress } from "../../lib/contracts/oasis/oasisContract.js";
+import { stealthSignerGenerateStealthAddress, stealthSignerGetMetaAddress } from "../../lib/contracts/oasis/oasisContract.js";
 
 /**
  *
@@ -78,6 +78,84 @@ export const stealthAddressRoutes = (app, _, done) => {
     }
   );
 
+  app.get("/aliases/:alias/detail", async (req, res) => {
+    try {
+      const { alias, isTestnet = true } = req.params;
+      console.log({ alias });
+
+      // The alias will be like "john.doe" -> john.doe.squidl.eth, "john" -> john.squidl.eth
+      // Split the full alias to get the alias
+      const aliasParts = alias.split(".");
+      const aliasName = aliasParts[aliasParts.length - 2] || "";
+      const username = aliasParts[aliasParts.length - 1] || "";
+
+      console.log({
+        aliasName: aliasName,
+        username: username,
+      });
+
+      const userAlias = await prismaClient.userAlias.findFirst({
+        where: {
+          alias: aliasName,
+          user: {
+            username: username,
+          },
+        },
+        include: {
+          user: true,
+        }
+      });
+
+      console.log({ userAlias });
+
+      // Generate or fetch new stealth address logic for aliasId
+      const newStealthAddress = await stealthSignerGenerateStealthAddress({
+        chainId: isTestnet ? 23295 : 23295,
+        metaAddress: userAlias.user.metaAddress,
+        key: userAlias.key,
+      });
+
+      // ENS name, e.g. john.doe.squidl.eth -> john.doe, john.squidl.eth -> john. The aliasName not always there
+      const ensName = `${aliasName}${aliasName ? "." : ""}${username}.squidl.eth`;
+      console.log({ ensName });
+
+      // Insert
+      const savedStealthAddress = await prismaClient.stealthAddress.create({
+        select: {
+          address: true,
+        },
+        data: {
+          aliasId: userAlias.id,
+          address: newStealthAddress.stealthAddress,
+          ephemeralPub: newStealthAddress.ephemeralPub,
+          viewHint: newStealthAddress.viewHint,
+          isSmartWallet: false,
+        },
+      });
+
+      const data = {
+        stealthAddress: {
+          address: savedStealthAddress.address,
+          ephemeralPub: newStealthAddress.ephemeralPub,
+          viewHint: newStealthAddress.viewHint,
+          ens: ensName,
+        },
+        user: {
+          username: userAlias.user.username
+        }
+      }
+
+      console.log(data);
+
+      return data;
+    } catch (error) {
+      console.error("Error while fetching alias detail:", error);
+      return res.status(500).send({
+        message: "Error while fetching alias detail",
+      });
+    }
+  });
+
   app.get('/aliases/check', {
     preHandler: [authMiddleware],
   }, async (req, res) => {
@@ -112,6 +190,7 @@ export const stealthAddressRoutes = (app, _, done) => {
     async (req, res) => {
       const { id } = req.params;
       // Fetch alias by id from your database or service
+
       return {};
     }
   );
@@ -224,7 +303,7 @@ export const stealthAddressRoutes = (app, _, done) => {
   app.get("/address/new-address", async (req, res) => {
     try {
       // Detect the full alias, e.g. user.user.squidl.eth, or user.squidl.eth ( [alias].[username].squidl.eth )
-      const { fullAlias, isTestnet = false } = req.query;
+      const { fullAlias, isTestnet = true } = req.query;
 
       // Split the full alias to get the alias
       const aliasParts = fullAlias.split(".");
@@ -243,6 +322,9 @@ export const stealthAddressRoutes = (app, _, done) => {
             username: username,
           },
         },
+        include: {
+          user: true,
+        }
       });
 
       if (!userAlias) {
@@ -253,6 +335,7 @@ export const stealthAddressRoutes = (app, _, done) => {
       const newStealthAddress = await stealthSignerGenerateStealthAddress({
         chainId: isTestnet ? 23295 : 23295,
         key: userAlias.key,
+        metaAddress: userAlias.user.metaAddress,
       });
 
       // Insert
@@ -280,28 +363,6 @@ export const stealthAddressRoutes = (app, _, done) => {
     }
   });
 
-  // GET /address/:alias-id/new-address, to get new stealth address of a certain alias. This endpoint is important, and it will be used for ENS CCIP read too
-  // app.get('/address/new-address', async (req, res) => {
-  //   const { alias } = req.params;
-  //   // Generate or fetch new stealth address logic for aliasId
-  //   // TODO: generate a stealth address, then save it to the database
-
-  //   // Random address
-  //   const wallet = ethers.Wallet.createRandom();
-
-  //   return { address: wallet.address };
-  // });
-
-  // app.get('/aliases/resolve/:sender/:data.json', async (request, reply) => {
-  //   const { sender, data } = request.params;
-  //   console.log({
-  //     sender,
-  //     data
-  //   })
-
-  //   // Handle your logic here
-  //   reply.send({ message: `Resolved sender: ${sender}, data: ${data}` });
-  // });
 
   // POST /tx/withdraw, to generate the transactions for the withdrawal of the funds
   app.post(
@@ -384,11 +445,46 @@ export const stealthAddressRoutes = (app, _, done) => {
       );
 
       const name = dnsDecodeName(decodedResolveCall[0]);
-      const alias = name.split(".")[name.split(".").length - 3];
 
-      // Random resolved address
-      // TODO: Determine the resolved address based on the alias saved in the database
-      const resolvedAddress = ethers.Wallet.createRandom().address;
+      // Split the full alias to get the alias
+      const aliasParts = name.split(".");
+      const alias = aliasParts[aliasParts.length - 4];
+      const username = aliasParts[aliasParts.length - 3];
+
+      const userAlias = await prismaClient.userAlias.findFirst({
+        where: {
+          alias: alias || "",
+          user: {
+            username: username,
+          }
+        },
+        include: {
+          user: true,
+        }
+      });
+
+      // Generate or fetch new stealth address logic for aliasId
+      const newStealthAddress = await stealthSignerGenerateStealthAddress({
+        chainId: 23295,
+        key: userAlias.key,
+        metaAddress: userAlias.user.metaAddress
+      });
+
+      // Insert
+      const savedStealthAddress = await prismaClient.stealthAddress.create({
+        select: {
+          address: true,
+        },
+        data: {
+          aliasId: userAlias.id,
+          address: newStealthAddress.stealthAddress,
+          ephemeralPub: newStealthAddress.ephemeralPub,
+          viewHint: newStealthAddress.viewHint,
+          isSmartWallet: false,
+        },
+      });
+
+      const resolvedAddress = savedStealthAddress.address;
 
       const result = await handleQuery({
         dnsEncodedName: decodedResolveCall[0],
@@ -403,7 +499,8 @@ export const stealthAddressRoutes = (app, _, done) => {
           records: {
             name: name,
             description: "This is a test description",
-            url: `https://${alias}.squidl.eth`,
+            // TODO: Includes alias too
+            url: `https://${username}.squidl.eth`,
           },
         },
       });

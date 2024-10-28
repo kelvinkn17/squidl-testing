@@ -8,13 +8,9 @@ import fastifyMultipart from "@fastify/multipart";
 import { authRoutes } from "./app/routes/auth/index.js";
 import { stealthAddressRoutes } from "./app/routes/stealth-address/index.js";
 import { priceWorker } from "./app/workers/priceWorkers.js";
-import { userRoutes } from "./app/routes/user/userRoutes.js";
-import { stealthSignerGenerateStealthAddress } from "./app/lib/contracts/oasis/oasisContract.js";
-import {
-  oneInchGetGeneralValue,
-  oneInchGetValueChart,
-} from "./app/routes/stealth-address/helpers/oneInchHelpers.js";
+import { userRoutes } from "./app/routes/user/userRoutes.js";;
 import { tokenPriceWorker } from "./app/workers/tokenPriceWorkers.js";
+import { stealthSignerRoutes } from "./app/routes/stealth-signer/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -55,6 +51,10 @@ fastify.register(stealthAddressRoutes, {
 fastify.register(userRoutes, {
   prefix: "/user",
 });
+
+fastify.register(stealthSignerRoutes, {
+  prefix: "/stealth-signer",
+})
 
 /* --------------------------------- Workers -------------------------------- */
 // fastify.register(priceWorker);

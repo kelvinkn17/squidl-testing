@@ -36,6 +36,10 @@ model User {
 
   wallet UserWallet?
 
+  metaAddress    String?
+  spendPublicKey String?
+  viewingPublicKey String?
+
   aliases UserAlias[]
 
   createdAt DateTime @default(now())

@@ -99,7 +99,7 @@ export const userRoutes = (app, _, done) => {
     async (req, reply) => {
       await verifyFields(req.body, ["username"], reply);
 
-      const { username } = req.body;
+      const { username, metaAddressInfo } = req.body;
 
       const { address } = req.user;
 
@@ -126,16 +126,46 @@ export const userRoutes = (app, _, done) => {
           },
         });
 
-        const updatedUser = await prismaClient.user.update({
-          where: {
-            id: user.id,
-          },
-          data: {
-            username,
-          },
-        });
+        // const updatedUser = await prismaClient.user.update({
+        //   where: {
+        //     id: user.id,
+        //   },
+        //   data: {
+        //     username,
+        //   },
+        // });
 
-        console.log({ updatedUser });
+        // // Update user alias meta address info
+        // const updatedAlias = await prismaClient.userAlias.update({
+        //   where: {
+        //     userId_alias: {
+        //       userId: user.id,
+        //       alias: ""
+        //     }
+        //   },
+        //   data: {
+        //     metaAddress: metaAddressInfo.metaAddress,
+        //     spendPublicKey: metaAddressInfo.spendPublicKey,
+        //     viewingPublicKey: metaAddressInfo.viewingPublicKey,
+        //   }
+        // })
+
+        // Make update atomic
+        const [updatedUser, updatedAlias] = await prismaClient.$transaction([
+          prismaClient.user.update({
+            where: {
+              id: user.id,
+            },
+            data: {
+              username: username,
+              metaAddress: metaAddressInfo.metaAddress,
+              spendPublicKey: metaAddressInfo.spendPublicKey,
+              viewingPublicKey: metaAddressInfo.viewingPublicKey,
+            },
+          })
+        ]);
+
+        console.log({ updatedUser, updatedAlias });
 
         return {
           message: "User alias has been updated",
@@ -205,16 +235,16 @@ export const userRoutes = (app, _, done) => {
             data.protocol_name === "native" || data.protocol_name === "token"
         )
           ? portfolioData.result
-              .filter(
-                (data) =>
-                  data.protocol_name === "native" ||
-                  data.protocol_name === "token"
-              )
-              .flatMap((data) => data.result)
-              .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
-              .reduce((acc, curr) => {
-                return acc + parseFloat(curr.value_usd);
-              }, 0)
+            .filter(
+              (data) =>
+                data.protocol_name === "native" ||
+                data.protocol_name === "token"
+            )
+            .flatMap((data) => data.result)
+            .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
+            .reduce((acc, curr) => {
+              return acc + parseFloat(curr.value_usd);
+            }, 0)
           : 0;
 
         const tokens = [];
