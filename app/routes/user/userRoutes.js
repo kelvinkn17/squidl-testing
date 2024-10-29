@@ -8,6 +8,7 @@ import { ALLOWED_CHAIN_IDS, CHAINS } from "../../config.js";
 import { verifyFields } from "../../utils/request.js";
 import { Contract, ethers, JsonRpcProvider } from "ethers";
 import { getTokenMetadata } from "../../utils/tokenUtils.js";
+import { aggregateBalances } from "./helpers.js";
 
 /**
  *
@@ -559,11 +560,9 @@ export const userRoutes = (app, _, done) => {
               chainId: nativeBalance,
               balance: formattedBalance,
               nativeToken: network.nativeToken,
-              logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg" // TODO: Add the native token logo, from the chain object
+              logo:  network.imageUrl
             });
           }
-
-          console.log('nativeBalances', nativeBalances);
 
           // Get the erc20 token balances if erc20Tokens array is not empty
           let erc20Balances = [];
@@ -586,8 +585,6 @@ export const userRoutes = (app, _, done) => {
               chainId: erc20Balance.chainId
             })
 
-            console.log('tokenMetadata', tokenMetadata);
-
             console.log(`ERC20 token balance for stealth address ${stealthAddress.address} on chain ${network.name}: ${formattedBalance}`);
             erc20Balances.push({
               chainId: erc20Balance.chainId,
@@ -600,8 +597,6 @@ export const userRoutes = (app, _, done) => {
             });
           }
 
-          console.log('erc20Balances', erc20Balances);
-
           stealthAddress.nativeBalances = nativeBalances;
           stealthAddress.erc20Balances = erc20Balances;
 
@@ -610,7 +605,15 @@ export const userRoutes = (app, _, done) => {
           delete stealthAddress.transactions;
         }
 
-        return reply.send(stealthAddressWithAssets);
+        const aggregatedBalances = aggregateBalances(stealthAddressWithAssets);
+        console.log('aggregatedBalances', aggregatedBalances);
+
+        const data = {
+          aggregatedBalances: aggregatedBalances,
+          stealthAddresses: stealthAddressWithAssets
+        }
+
+        return reply.send(data);
       } catch (e) {
         console.log("Error getting wallet assets", e);
         return reply.status(500).send({
