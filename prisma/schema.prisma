@@ -36,8 +36,8 @@ model User {
 
   wallet UserWallet?
 
-  metaAddress    String?
-  spendPublicKey String?
+  metaAddress      String?
+  spendPublicKey   String?
   viewingPublicKey String?
 
   aliases UserAlias[]
@@ -175,10 +175,13 @@ model Transaction {
   fromAddress String
   toAddress   String
 
-  tokenId String
-  token   Token  @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  isNative Boolean @default(false)
 
-  amount String
+  tokenId String?
+  token   Token?  @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  value  String
+  amount Float
   data   Json
   txHash String @unique
 

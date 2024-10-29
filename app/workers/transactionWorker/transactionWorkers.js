@@ -1,8 +1,10 @@
 import { JsonRpcProvider, Interface, ethers } from "ethers";
 import Web3 from "web3";
-import { CHAINS } from "../config.js";
-import { prismaClient } from "../lib/db/prisma.js";
+import { CHAINS } from "../../config.js";
+import { prismaClient } from "../../lib/db/prisma.js";
 import cron from "node-cron";
+import { logTransaction } from "./helpers.js";
+import { sleep } from "../../utils/miscUtils.js";
 
 const ERC20_TRANSFER_EVENT_SIG = "Transfer(address,address,uint256)";
 const erc20Interface = new Interface([`event ${ERC20_TRANSFER_EVENT_SIG}`]);
@@ -29,18 +31,17 @@ export const transactionWorker = (app, _, done) => {
       // Get recently created stealth addresses that haven't been marked as transacted
       const recentStealthAddresses = await prismaClient.stealthAddress.findMany({
         where: {
-          isTransacted: false,
           createdAt: {
-            gte: new Date(Date.now() - 30 * 60 * 1000), // Created no more than 30 minutes ago
+            gte: new Date(Date.now() - 8 * 60 * 60 * 1000), // Created no more than 8 hours ago, this is done to avoid checking too many addresses
           },
         },
         orderBy: {
           createdAt: "desc",
         },
-        take: 50,
+        take: 200,
       });
 
-      console.log('recentStealthAddresses', recentStealthAddresses);
+      // console.log('recentStealthAddresses', recentStealthAddresses);
 
       if (recentStealthAddresses.length === 0) {
         console.log("No recent stealth addresses to check");
@@ -55,7 +56,7 @@ export const transactionWorker = (app, _, done) => {
 
       const stealthAddresses = Object.keys(addressToIdMap);
 
-      for (const chain of CHAINS.testnet) {
+      for (const chain of CHAINS.filter(chain => chain.isTestnet)) {
         const web3 = new Web3(chain.rpcUrl);
 
         // Get the latest block number and calculate the range to check
@@ -71,7 +72,6 @@ export const transactionWorker = (app, _, done) => {
           topics: [TRANSFER_TOPIC],
         };
         const logs = await web3.eth.getPastLogs(options);
-        console.log("Fetched logs count:", logs.length);
 
         // Check logs for any relevant ERC20 transfers
         const detectedIds = new Set();
@@ -83,7 +83,20 @@ export const transactionWorker = (app, _, done) => {
           if (involvedAddress) {
             const matchedAddress = "0x" + involvedAddress.slice(-40).toLowerCase();
             const matchedId = addressToIdMap[matchedAddress];
-            if (matchedId) detectedIds.add(matchedId);
+            if (matchedId){
+              detectedIds.add(matchedId);
+              
+              console.log(`Detected ERC20 transfer to stealth address with ID ${matchedId} on ${chain.name}`, {
+                log: log
+              });
+
+              await logTransaction({
+                txHash: log.transactionHash,
+                isNative: false,
+                stealthAddressId: matchedId,
+                chainId: chain.id
+              })
+            }
           }
         }
 
@@ -95,7 +108,20 @@ export const transactionWorker = (app, _, done) => {
             if (tx.to) {
               const toAddress = tx.to.toLowerCase();
               const matchedId = addressToIdMap[toAddress];
-              if (matchedId) detectedIds.add(matchedId);
+              if (matchedId){
+                detectedIds.add(matchedId);
+
+                console.log(`Detected native transaction to stealth address with ID ${matchedId} on ${chain.name}`, {
+                  tx: tx
+                });
+
+                await logTransaction({
+                  txHash: tx.hash,
+                  isNative: true,
+                  stealthAddressId: matchedId,
+                  chainId: chain.id
+                })
+              }
             }
           }
         }
@@ -112,6 +138,8 @@ export const transactionWorker = (app, _, done) => {
           });
           console.log(`Marked stealth address with ID ${id} as transacted on ${chain.name}`);
         }
+
+        await sleep(500)
       }
     } catch (error) {
       console.log("Error in handleCheckStealthAddressTransaction", error);
@@ -126,7 +154,7 @@ export const transactionWorker = (app, _, done) => {
     handleCheckStealthAddressTransaction();
   })
 
-  // handleCheckStealthAddressTransaction();
+  handleCheckStealthAddressTransaction();
 
   done();
 };

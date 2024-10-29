@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Upsert chains (Testnet and Mainnet)
-  for (const chain of CHAINS.testnet) {
+  for (const chain of CHAINS.filter((chain) => chain.isTestnet)) {
     await prisma.chain.upsert({
       where: {
         id: chain.id,
@@ -30,7 +30,7 @@ async function main() {
     });
   }
 
-  for (const chain of CHAINS.mainnet) {
+  for (const chain of CHAINS.filter((chain) => !chain.isTestnet)) {
     await prisma.chain.upsert({
       where: {
         id: chain.id,
@@ -65,7 +65,7 @@ async function main() {
   };
 
   // Insert USDC for each relevant chain (mainnet or testnet)
-  for (const chain of [...CHAINS.mainnet, ...CHAINS.testnet]) {
+  for (const chain of [...CHAINS]) {
     await prisma.token.upsert({
       where: {
         chainId_address: {

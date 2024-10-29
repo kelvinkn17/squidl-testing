@@ -584,5 +584,80 @@ export const userRoutes = (app, _, done) => {
     }
   );
 
+  app.get(
+    "/wallet-assets/:fullAlias/transactions",
+    async function (req, reply) {
+      try {
+        const { fullAlias } = req.params;
+        const { isTestnet = true } = req.query;
+
+        // Split the full alias to get the alias
+        const aliasParts = fullAlias.split(".");
+        const alias = aliasParts[aliasParts.length - 4] || "";
+        const username = aliasParts[aliasParts.length - 3];
+
+        const transactions = await prismaClient.transaction.findMany({
+          where: {
+            stealthAddress: {
+              alias: {
+                alias: alias,
+                user: {
+                  username: username,
+                }
+              }
+            }
+          },
+          select: {
+            chainId: true,
+            chain: {
+              select: {
+                id: true,
+                name: true,
+                blockExplorerUrl: true,
+                isTestnet: true,
+                nativeToken: true
+              }
+            },
+            fromAddress: true,
+            toAddress: true,
+            isNative: true,
+            token: {
+              select: {
+                address: true,
+                name: true,
+                symbol: true,
+                logo: true,
+                decimals: true,
+                stats: {
+                  select: {
+                    priceUSD: true
+                  }
+                }
+              }
+            },
+            value: true,
+            amount: true,
+            txHash: true,
+            stealthAddress: {
+              select: {
+                address: true
+              }
+            },
+          },
+          orderBy: {
+            createdAt: "desc"
+          }
+        });
+
+        return reply.send(transactions);
+      } catch (error) {
+        console.log("Error getting wallet transactions", error);
+        return reply.code(500).send({
+          message: "Error getting wallet transactions",
+        });
+      }
+    }
+  );
+
   done();
 };
