@@ -126,7 +126,7 @@ export const transactionWorker = (app, _, done) => {
     handleCheckStealthAddressTransaction();
   })
 
-  handleCheckStealthAddressTransaction();
+  // handleCheckStealthAddressTransaction();
 
   done();
 };
