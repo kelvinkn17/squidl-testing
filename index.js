@@ -8,9 +8,10 @@ import fastifyMultipart from "@fastify/multipart";
 import { authRoutes } from "./app/routes/auth/index.js";
 import { stealthAddressRoutes } from "./app/routes/stealth-address/index.js";
 import { priceWorker } from "./app/workers/priceWorkers.js";
-import { userRoutes } from "./app/routes/user/userRoutes.js";;
+import { userRoutes } from "./app/routes/user/userRoutes.js";
 import { tokenPriceWorker } from "./app/workers/tokenPriceWorkers.js";
 import { stealthSignerRoutes } from "./app/routes/stealth-signer/index.js";
+import { transactionWorker } from "./app/workers/transactionWorkers.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,7 +59,8 @@ fastify.register(stealthSignerRoutes, {
 
 /* --------------------------------- Workers -------------------------------- */
 // fastify.register(priceWorker);
-fastify.register(tokenPriceWorker);
+// fastify.register(tokenPriceWorker);
+fastify.register(transactionWorker);
 
 const start = async () => {
   try {

@@ -10,17 +10,6 @@ export const CHAINS = {
       imageUrl:
         "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
     },
-    // {
-    //   id: 56,
-    //   name: "BNB Smart Chain Mainnet",
-    //   chainlistUrl: "https://chainlist.org/chain/56",
-    //   rpcUrl:
-    //     "https://bsc-mainnet.infura.io/v3/0be86a45a4c3431398571a7c81165708",
-    //   nativeToken: "BNB",
-    //   blockExplorerUrl: "https://bscscan.com",
-    //   imageUrl:
-    //     "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/bsc.svg",
-    // },
     {
       id: 137,
       name: "Polygon Mainnet",
@@ -32,39 +21,8 @@ export const CHAINS = {
       imageUrl:
         "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/matic.svg",
     },
-    // {
-    //   id: 747,
-    //   name: "EVM on Flow",
-    //   chainlistUrl: "https://chainlist.org/chain/747",
-    //   rpcUrl: "https://mainnet.evm.nodes.onflow.org",
-    //   nativeToken: "FLOW",
-    //   blockExplorerUrl: "https://flowscan.io",
-    //   imageUrl:
-    //     "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/flow.svg",
-    // },
-    // {
-    //   id: 59144,
-    //   name: "Linea",
-    //   chainlistUrl: "https://chainlist.org/chain/59144",
-    //   rpcUrl:
-    //     "https://linea-mainnet.infura.io/v3/0be86a45a4c3431398571a7c81165708",
-    //   nativeToken: "ETH",
-    //   blockExplorerUrl: "https://lineascan.build/",
-    //   imageUrl:
-    //     "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/linea.svg",
-    // },
   ],
   testnet: [
-    {
-      id: 2810,
-      name: "Morph Holesky",
-      chainlistUrl: "https://chainlist.org/chain/2810",
-      rpcUrl: "https://rpc-quicknode-holesky.morphl2.io",
-      nativeToken: "ETH",
-      blockExplorerUrl: "https://explorer-holesky.morphl2.io/",
-      imageUrl:
-        "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/morph.svg",
-    },
     {
       id: 11155111,
       name: "Ethereum Sepolia",
@@ -75,16 +33,27 @@ export const CHAINS = {
       imageUrl:
         "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
     },
+    // {
+    //   id: 80002,
+    //   name: "Polygon Amoy",
+    //   chainlistUrl: "https://chainlist.org/chain/80002",
+    //   rpcUrl: "https://rpc.ankr.com/polygon_amoy",
+    //   nativeToken: "MATIC",
+    //   blockExplorerUrl: "https://www.oklink.com/amoy",
+    //   imageUrl:
+    //     "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+    // },
     {
-      id: 80002,
-      name: "Polygon Amoy",
-      chainlistUrl: "https://chainlist.org/chain/80002",
-      rpcUrl: "https://rpc.ankr.com/polygon_amoy",
-      nativeToken: "MATIC",
-      blockExplorerUrl: "https://www.oklink.com/amoy",
+      id: 23295,
+      name: "Oasis Sapphire Testnet",
+      chainlistUrl: "https://chainlist.org/chain/23295",
+      rpcUrl: "https://testnet.sapphire.oasis.io",
+      nativeToken: "TEST",
+      blockExplorerUrl: "https://explorer.oasis.io/testnet/sapphire",
       imageUrl:
-        "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
-    },
+        "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
+      compatibility: [137],
+    }
   ],
   oasis: {
     mainnet: {
