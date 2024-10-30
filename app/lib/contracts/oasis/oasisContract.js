@@ -43,6 +43,9 @@ export const stealthSignerGenerateStealthAddress = async ({
     const network = Object.values(OASIS_CONTRACT).find(
       (network) => network.network.id === chainId
     ).network;
+    if(!network){
+      throw new Error('Invalid chainId');
+    }
     const provider = sapphire.wrap(ethers.getDefaultProvider(network.rpcUrl));
 
     const contract = new ethers.Contract(

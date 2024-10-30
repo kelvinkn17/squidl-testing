@@ -56,11 +56,14 @@ export const transactionWorker = (app, _, done) => {
 
       const stealthAddresses = Object.keys(addressToIdMap);
 
-      for (const chain of CHAINS.filter(chain => chain.isTestnet)) {
+      console.log("Checking stealth addresses", stealthAddresses);
+
+      for (const chain of CHAINS) {
+        // for (const chain of CHAINS.filter(chain => chain.isTestnet)) {
         const web3 = new Web3(chain.rpcUrl);
 
         // Get the latest block number and calculate the range to check
-        const currentBlock = await web3.eth.getBlockNumber();
+        const currentBlock = parseInt((await web3.eth.getBlockNumber()).toString());
         const fromBlock = Math.max(0, currentBlock - BLOCKS_TO_CHECK);
 
         console.log(`Fetching logs and transactions for blocks ${fromBlock} to ${currentBlock} on chain: ${chain.name}`);
@@ -83,9 +86,9 @@ export const transactionWorker = (app, _, done) => {
           if (involvedAddress) {
             const matchedAddress = "0x" + involvedAddress.slice(-40).toLowerCase();
             const matchedId = addressToIdMap[matchedAddress];
-            if (matchedId){
+            if (matchedId) {
               detectedIds.add(matchedId);
-              
+
               console.log(`Detected ERC20 transfer to stealth address with ID ${matchedId} on ${chain.name}`, {
                 log: log
               });
@@ -102,27 +105,30 @@ export const transactionWorker = (app, _, done) => {
 
         // Check transactions in each block for native transfers
         for (let blockNumber = fromBlock; blockNumber <= currentBlock; blockNumber++) {
-          const block = await web3.eth.getBlock(blockNumber, true); // `true` includes full transactions
+          try {
+            const block = await web3.eth.getBlock(blockNumber, true); // `true` includes full transactions
+            for (const tx of block.transactions) {
+              if (tx.to) {
+                const toAddress = tx.to.toLowerCase();
+                const matchedId = addressToIdMap[toAddress];
+                if (matchedId) {
+                  detectedIds.add(matchedId);
 
-          for (const tx of block.transactions) {
-            if (tx.to) {
-              const toAddress = tx.to.toLowerCase();
-              const matchedId = addressToIdMap[toAddress];
-              if (matchedId){
-                detectedIds.add(matchedId);
+                  console.log(`Detected native transaction to stealth address with ID ${matchedId} on ${chain.name}`, {
+                    tx: tx
+                  });
 
-                console.log(`Detected native transaction to stealth address with ID ${matchedId} on ${chain.name}`, {
-                  tx: tx
-                });
-
-                await logTransaction({
-                  txHash: tx.hash,
-                  isNative: true,
-                  stealthAddressId: matchedId,
-                  chainId: chain.id
-                })
+                  await logTransaction({
+                    txHash: tx.hash,
+                    isNative: true,
+                    stealthAddressId: matchedId,
+                    chainId: chain.id
+                  })
+                }
               }
             }
+          } catch (error) {
+            console.log('Error while fetching block', error)
           }
         }
 
@@ -139,6 +145,7 @@ export const transactionWorker = (app, _, done) => {
           console.log(`Marked stealth address with ID ${id} as transacted on ${chain.name}`);
         }
 
+        console.log(`Finished checking stealth addresses on ${chain.name}`);
         await sleep(500)
       }
     } catch (error) {

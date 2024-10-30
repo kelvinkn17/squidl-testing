@@ -149,9 +149,9 @@ export async function getAliasTotalBalanceUSD(alias, username) {
     };
   });
 
-  console.dir(stealthAddressWithAssets, {
-    depth: 12,
-  });
+  // console.dir(stealthAddressWithAssets, {
+  //   depth: 12,
+  // });
 
   for (const stealthAddress of stealthAddressWithAssets) {
     for (const chainId of stealthAddress.nativeTokens) {
