@@ -557,7 +557,7 @@ export const userRoutes = (app, _, done) => {
     async function (req, reply) {
       try {
         const { fullAlias } = req.params;
-        const { isTestnet = true } = req.query;
+        const { isTestnet = "true" } = req.query;
 
         // Split the full alias to get the alias
         const aliasParts = fullAlias.split(".");
@@ -583,7 +583,14 @@ export const userRoutes = (app, _, done) => {
                 name: true,
                 blockExplorerUrl: true,
                 isTestnet: true,
-                nativeToken: true
+                nativeToken: {
+                  select: {
+                    name: true,
+                    symbol: true,
+                    logo: true,
+                    priceUSD: true
+                  }
+                }
               }
             },
             fromAddress: true,
@@ -611,6 +618,100 @@ export const userRoutes = (app, _, done) => {
                 address: true
               }
             },
+          },
+          orderBy: {
+            createdAt: "desc"
+          }
+        });
+
+        return reply.send(transactions);
+      } catch (error) {
+        console.log("Error getting wallet transactions", error);
+        return reply.code(500).send({
+          message: "Error getting wallet transactions",
+        });
+      }
+    }
+  );
+
+  app.get(
+    "/wallet-assets/:fullAlias/aggregated-transactions",
+    async function (req, reply) {
+      try {
+        const { fullAlias } = req.params;
+        const { isTestnet = "true" } = req.query;
+
+        // Split the full alias to get the alias
+        const aliasParts = fullAlias.split(".");
+        const alias = aliasParts[aliasParts.length - 4] || "";
+        const username = aliasParts[aliasParts.length - 3];
+
+        if (alias) {
+          // Must only alias like john.squidl.me, not doe.john.squidl.me
+          return reply.code(400).send({
+            message: "You must only provide the root alias, not sub-alias. Example: john.squidl.me"
+          });
+        }
+
+        const transactions = await prismaClient.transaction.findMany({
+          where: {
+            stealthAddress: {
+              alias: {
+                user: {
+                  username: username,
+                }
+              }
+            }
+          },
+          select: {
+            chainId: true,
+            chain: {
+              select: {
+                id: true,
+                name: true,
+                blockExplorerUrl: true,
+                isTestnet: true,
+                nativeToken: {
+                  select: {
+                    name: true,
+                    symbol: true,
+                    logo: true,
+                    priceUSD: true
+                  }
+                }
+              }
+            },
+            fromAddress: true,
+            toAddress: true,
+            isNative: true,
+            token: {
+              select: {
+                address: true,
+                name: true,
+                symbol: true,
+                logo: true,
+                decimals: true,
+                stats: {
+                  select: {
+                    priceUSD: true
+                  }
+                }
+              }
+            },
+            value: true,
+            amount: true,
+            txHash: true,
+            stealthAddress: {
+              select: {
+                address: true,
+                alias: {
+                  select: {
+                    alias: true
+                  }
+                }
+              }
+            },
+            createdAt: true
           },
           orderBy: {
             createdAt: "desc"
