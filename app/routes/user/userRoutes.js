@@ -522,6 +522,7 @@ export const userRoutes = (app, _, done) => {
                 chainId,
                 balance: formattedBalance,
                 chainName: network.name,
+                chainLogo: network.imageUrl,
                 priceUSD: nativeToken.priceUSD * formattedBalance,
                 nativeToken: nativeToken,
               };
@@ -547,6 +548,7 @@ export const userRoutes = (app, _, done) => {
                 address,
                 balance: formattedBalance,
                 chainName: network.name,
+                chainLogo: network.imageUrl,
                 token: {
                   name: tokenMetadata.name,
                   symbol: tokenMetadata.symbol,

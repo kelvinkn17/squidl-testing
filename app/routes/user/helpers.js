@@ -7,14 +7,22 @@ export function aggregateBalances(data) {
   data.forEach((wallet) => {
     // Process native token balances
     wallet.nativeBalances.forEach((native) => {
-      const { chainId, nativeToken, logo, balance, priceUSD, chainName } =
-        native;
+      const {
+        chainId,
+        nativeToken,
+        logo,
+        balance,
+        priceUSD,
+        chainName,
+        chainLogo,
+      } = native;
       const key = `${chainId}_${nativeToken.symbol}`; // Use symbol as part of key for uniqueness
 
       if (!aggregatedBalances.native[key]) {
         aggregatedBalances.native[key] = {
           chainId,
           chainName,
+          chainLogo,
           nativeToken,
           logo,
           balance: 0,
@@ -38,12 +46,14 @@ export function aggregateBalances(data) {
         decimals,
         priceUSD,
         chainName,
+        chainLogo,
       } = erc20;
       const key = `${chainId}_${address}`;
 
       if (!aggregatedBalances.erc20[key]) {
         aggregatedBalances.erc20[key] = {
           chainId,
+          chainLogo,
           address,
           balance: 0,
           logo,
