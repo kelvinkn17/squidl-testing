@@ -58,9 +58,11 @@ fastify.register(stealthSignerRoutes, {
 })
 
 /* --------------------------------- Workers -------------------------------- */
-// fastify.register(priceWorker);
-// fastify.register(tokenPriceWorker);
-// fastify.register(transactionWorker);
+if (process.env.WORKERS === "true") {
+  fastify.register(priceWorker);
+  fastify.register(tokenPriceWorker);
+  fastify.register(transactionWorker);
+}
 
 const start = async () => {
   try {
