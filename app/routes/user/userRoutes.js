@@ -659,8 +659,14 @@ export const userRoutes = (app, _, done) => {
             stealthAddress: {
               select: {
                 address: true,
+                alias: {
+                  select: {
+                    alias: true,
+                  },
+                },
               },
             },
+            createdAt: true,
           },
           orderBy: {
             createdAt: "desc",
