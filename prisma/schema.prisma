@@ -20,6 +20,7 @@ model Chain {
   rpcUrl           String
   blockExplorerUrl String
   isTestnet        Boolean
+  imageUrl         String?
 
   nativeToken NativeToken?
 
@@ -33,14 +34,14 @@ model Chain {
 model NativeToken {
   id String @id @default(cuid())
 
-  chainId Int @unique
+  chainId Int   @unique
   chain   Chain @relation(fields: [chainId], references: [id], onDelete: Cascade)
 
   wrappedTokenAddress String?
-  name   String
-  symbol String
-  logo   String?
-  priceUSD    Float? @default(3500)
+  name                String
+  symbol              String
+  logo                String?
+  priceUSD            Float?  @default(3500)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
