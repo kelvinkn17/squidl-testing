@@ -238,16 +238,16 @@ export const userRoutes = (app, _, done) => {
             data.protocol_name === "native" || data.protocol_name === "token"
         )
           ? portfolioData.result
-              .filter(
-                (data) =>
-                  data.protocol_name === "native" ||
-                  data.protocol_name === "token"
-              )
-              .flatMap((data) => data.result)
-              .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
-              .reduce((acc, curr) => {
-                return acc + parseFloat(curr.value_usd);
-              }, 0)
+            .filter(
+              (data) =>
+                data.protocol_name === "native" ||
+                data.protocol_name === "token"
+            )
+            .flatMap((data) => data.result)
+            .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
+            .reduce((acc, curr) => {
+              return acc + parseFloat(curr.value_usd);
+            }, 0)
           : 0;
 
         const tokens = [];
@@ -543,6 +543,13 @@ export const userRoutes = (app, _, done) => {
                 tokenAddress: address,
                 chainId,
               });
+
+              const tokenPrice = await prismaClient.token.findFirst({
+                where: { address },
+                select: { stats: { select: { priceUSD: true } } },
+              });
+
+              console.log('token', tokenMetadata);
               return {
                 chainId,
                 address,
@@ -554,9 +561,9 @@ export const userRoutes = (app, _, done) => {
                   symbol: tokenMetadata.symbol,
                   logo: tokenMetadata.logo,
                   decimals: tokenMetadata.decimals,
-                  priceUSD: tokenMetadata.priceUSD,
+                  priceUSD: tokenPrice.stats.priceUSD
                 },
-                priceUSD: tokenMetadata.priceUSD * formattedBalance,
+                balanceUSD: tokenPrice.stats.priceUSD * formattedBalance,
               };
             }
           );

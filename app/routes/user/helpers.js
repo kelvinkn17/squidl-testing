@@ -46,13 +46,16 @@ export function aggregateBalances(data) {
         chainId,
         address,
         balance,
-        logo,
-        name,
-        symbol,
-        decimals,
-        priceUSD,
+        token: {
+          name,
+          symbol,
+          decimals,
+          priceUSD,
+          logo
+        },
         chainName,
         chainLogo,
+        balanceUSD
       } = erc20;
       const key = `${chainId}_${address}`;
 
@@ -60,13 +63,18 @@ export function aggregateBalances(data) {
         aggregatedBalances.erc20[key] = {
           chainId,
           chainLogo,
+          chainName,
           address,
           balance: 0,
-          logo,
-          name,
-          symbol,
-          decimals,
-          chainName,
+          token: {
+            address,
+            decimals,
+            logo,
+            name,
+            symbol,
+            priceUSD
+          },
+          priceUSD: balanceUSD
         };
       }
 
