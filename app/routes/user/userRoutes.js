@@ -625,6 +625,7 @@ export const userRoutes = (app, _, done) => {
                 name: true,
                 blockExplorerUrl: true,
                 isTestnet: true,
+                imageUrl: true,
                 nativeToken: {
                   select: {
                     name: true,
@@ -658,8 +659,14 @@ export const userRoutes = (app, _, done) => {
             stealthAddress: {
               select: {
                 address: true,
+                alias: {
+                  select: {
+                    alias: true,
+                  },
+                },
               },
             },
+            createdAt: true,
           },
           orderBy: {
             createdAt: "desc",
@@ -714,6 +721,7 @@ export const userRoutes = (app, _, done) => {
                 name: true,
                 blockExplorerUrl: true,
                 isTestnet: true,
+                imageUrl: true,
                 nativeToken: {
                   select: {
                     name: true,
