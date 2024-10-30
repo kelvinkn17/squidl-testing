@@ -8,7 +8,11 @@ import {
 } from "../../utils/ensUtils.js";
 import { getNextAliasKey } from "./helpers/aliasHelpers.js";
 import { prismaClient } from "../../lib/db/prisma.js";
-import { stealthSignerGenerateStealthAddress, stealthSignerGetMetaAddress } from "../../lib/contracts/oasis/oasisContract.js";
+import {
+  stealthSignerGenerateStealthAddress,
+  stealthSignerGetMetaAddress,
+} from "../../lib/contracts/oasis/oasisContract.js";
+import { getAliasTotalBalanceUSD } from "../user/helpers.js";
 
 /**
  *
@@ -54,12 +58,12 @@ export const stealthAddressRoutes = (app, _, done) => {
           },
         });
 
-        // Add balanceUsd to each alias
         for (let i = 0; i < aliases.length; i++) {
-          // Random from $100 to $10000, max 2 decimal places
-          // TODO: Fetch the actual balance for each alias
-          aliases[i].balanceUsd = 0;
-          // To fetch the overall balance, it will iterate each aliases, and using 1inch Generate Current Value API to get the balance of address collection
+          const aliasTotalBalanceUsd = await getAliasTotalBalanceUSD(
+            aliases[i].alias,
+            aliases[i].user.username
+          );
+          aliases[i].balanceUsd = aliasTotalBalanceUsd;
         }
 
         aliases = aliases.filter((alias) => {
@@ -103,7 +107,7 @@ export const stealthAddressRoutes = (app, _, done) => {
         },
         include: {
           user: true,
-        }
+        },
       });
 
       console.log({ userAlias });
@@ -116,7 +120,9 @@ export const stealthAddressRoutes = (app, _, done) => {
       });
 
       // ENS name, e.g. john.doe.squidl.eth -> john.doe, john.squidl.eth -> john. The aliasName not always there
-      const ensName = `${aliasName}${aliasName ? "." : ""}${username}.squidl.eth`;
+      const ensName = `${aliasName}${
+        aliasName ? "." : ""
+      }${username}.squidl.eth`;
       console.log({ ensName });
 
       // Insert
@@ -141,9 +147,9 @@ export const stealthAddressRoutes = (app, _, done) => {
           ens: ensName,
         },
         user: {
-          username: userAlias.user.username
-        }
-      }
+          username: userAlias.user.username,
+        },
+      };
 
       console.log(data);
 
@@ -156,30 +162,34 @@ export const stealthAddressRoutes = (app, _, done) => {
     }
   });
 
-  app.get('/aliases/check', {
-    preHandler: [authMiddleware],
-  }, async (req, res) => {
-    // Check if the alias is available
-    try {
-      const { alias } = req.query;
-      const userAlias = await prismaClient.userAlias.findFirst({
-        where: {
-          alias: alias,
-        },
-      });
+  app.get(
+    "/aliases/check",
+    {
+      preHandler: [authMiddleware],
+    },
+    async (req, res) => {
+      // Check if the alias is available
+      try {
+        const { alias } = req.query;
+        const userAlias = await prismaClient.userAlias.findFirst({
+          where: {
+            alias: alias,
+          },
+        });
 
-      if (userAlias) {
-        return false
-      } else {
-        return true
+        if (userAlias) {
+          return false;
+        } else {
+          return true;
+        }
+      } catch (error) {
+        console.error("Error while checking alias:", error);
+        return res.status(500).send({
+          message: "Error while checking alias",
+        });
       }
-    } catch (error) {
-      console.error("Error while checking alias:", error);
-      return res.status(500).send({
-        message: "Error while checking alias",
-      });
     }
-  })
+  );
 
   // GET /aliases/:id , to get the detailed information of a certain alias
   app.get(
@@ -324,7 +334,7 @@ export const stealthAddressRoutes = (app, _, done) => {
         },
         include: {
           user: true,
-        }
+        },
       });
 
       if (!userAlias) {
@@ -362,7 +372,6 @@ export const stealthAddressRoutes = (app, _, done) => {
       });
     }
   });
-
 
   // POST /tx/withdraw, to generate the transactions for the withdrawal of the funds
   app.post(
@@ -456,18 +465,18 @@ export const stealthAddressRoutes = (app, _, done) => {
           alias: alias || "",
           user: {
             username: username,
-          }
+          },
         },
         include: {
           user: true,
-        }
+        },
       });
 
       // Generate or fetch new stealth address logic for aliasId
       const newStealthAddress = await stealthSignerGenerateStealthAddress({
         chainId: 23295,
         key: userAlias.key,
-        metaAddress: userAlias.user.metaAddress
+        metaAddress: userAlias.user.metaAddress,
       });
 
       // Insert

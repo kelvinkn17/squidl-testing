@@ -1,3 +1,8 @@
+import { Contract, ethers, JsonRpcProvider } from "ethers";
+import { CHAINS } from "../../config.js";
+import { prismaClient } from "../../lib/db/prisma.js";
+import { erc20Abi } from "viem";
+
 export function aggregateBalances(data) {
   const aggregatedBalances = {
     native: {},
@@ -69,12 +74,86 @@ export function aggregateBalances(data) {
     });
   });
 
-  // Convert the aggregated results into an array format
   const nativeResult = Object.values(aggregatedBalances.native);
   const erc20Result = Object.values(aggregatedBalances.erc20);
 
+  const totalBalanceUSD =
+    nativeResult.reduce((acc, { priceUSD }) => {
+      return acc + priceUSD;
+    }, 0) +
+    erc20Result.reduce((acc, { priceUSD }) => {
+      return acc + priceUSD;
+    }, 0);
+
   return {
-    native: nativeResult,
-    erc20: erc20Result,
+    aggregatedBalances: {
+      native: nativeResult,
+      erc20: erc20Result,
+    },
+    totalBalanceUSD,
   };
+}
+
+export async function getAliasTotalBalanceUSD(alias, username) {
+  const aliasData = await prismaClient.userAlias.findFirst({
+    where: { alias, user: { username } },
+    include: {
+      stealthAddresses: {
+        where: { isTransacted: true },
+        select: {
+          address: true,
+          transactions: {
+            select: {
+              chainId: true,
+              isNative: true,
+              token: { select: { address: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!aliasData) throw new Error("Alias not found");
+
+  let totalBalanceUSD = 0;
+
+  for (const stealthAddress of aliasData.stealthAddresses) {
+    for (const transaction of stealthAddress.transactions.filter(
+      (tx) => tx.isNative
+    )) {
+      const { chainId } = transaction;
+      const network = CHAINS.find((chain) => chain.id === chainId);
+      const provider = new JsonRpcProvider(network.rpcUrl);
+      const balance = await provider.getBalance(stealthAddress.address);
+      const formattedBalance = parseFloat(ethers.formatEther(balance));
+
+      const nativeToken = await prismaClient.nativeToken.findFirst({
+        where: { chainId },
+        select: { priceUSD: true },
+      });
+
+      totalBalanceUSD += (nativeToken.priceUSD || 0) * formattedBalance;
+    }
+
+    for (const transaction of stealthAddress.transactions.filter(
+      (tx) => !tx.isNative && tx.token?.address
+    )) {
+      const { chainId, token } = transaction;
+      const network = CHAINS.find((chain) => chain.id === chainId);
+      const provider = new JsonRpcProvider(network.rpcUrl);
+      const contract = new Contract(token.address, erc20Abi, provider);
+      const balance = await contract.balanceOf(stealthAddress.address);
+      const formattedBalance = parseFloat(ethers.formatUnits(balance, 18));
+
+      const tokenMetadata = await prismaClient.erc20Token.findFirst({
+        where: { chainId, address: token.address },
+        select: { priceUSD: true },
+      });
+
+      totalBalanceUSD += (tokenMetadata.priceUSD || 0) * formattedBalance;
+    }
+  }
+
+  return totalBalanceUSD;
 }

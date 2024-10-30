@@ -579,11 +579,14 @@ export const userRoutes = (app, _, done) => {
       );
 
       // Aggregate balances
-      const aggregatedBalances = aggregateBalances(stealthAddressWithAssets);
+      const { aggregatedBalances, totalBalanceUSD } = aggregateBalances(
+        stealthAddressWithAssets
+      );
 
       return reply.send({
         aggregatedBalances,
         stealthAddresses: stealthAddressWithAssets,
+        totalBalanceUSD,
       });
     } catch (e) {
       console.error("Error getting wallet assets", e);
