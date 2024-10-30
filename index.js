@@ -59,7 +59,7 @@ fastify.register(stealthSignerRoutes, {
 
 /* --------------------------------- Workers -------------------------------- */
 if (process.env.WORKERS === "true") {
-  fastify.register(priceWorker);
+  // fastify.register(priceWorker);
   fastify.register(tokenPriceWorker);
   fastify.register(transactionWorker);
 }
