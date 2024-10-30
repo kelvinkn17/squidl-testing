@@ -1,32 +1,44 @@
 export function aggregateBalances(data) {
   const aggregatedBalances = {
     native: {},
-    erc20: {}
+    erc20: {},
   };
 
-  data.forEach(wallet => {
+  data.forEach((wallet) => {
     // Process native token balances
-    wallet.nativeBalances.forEach(native => {
-      const { chainId, nativeToken, logo, balance, priceUSD } = native;
-      const key = `${chainId}_${nativeToken.symbol}`;  // Use symbol as part of key for uniqueness
+    wallet.nativeBalances.forEach((native) => {
+      const { chainId, nativeToken, logo, balance, priceUSD, chainName } =
+        native;
+      const key = `${chainId}_${nativeToken.symbol}`; // Use symbol as part of key for uniqueness
 
       if (!aggregatedBalances.native[key]) {
         aggregatedBalances.native[key] = {
           chainId,
-          balance: 0,
+          chainName,
           nativeToken,
           logo,
-          priceUSD: 0
+          balance: 0,
+          priceUSD: 0,
         };
       }
 
       aggregatedBalances.native[key].balance += balance;
-      aggregatedBalances.native[key].priceUSD = priceUSD
+      aggregatedBalances.native[key].priceUSD += priceUSD;
     });
 
     // Process ERC20 token balances
-    wallet.erc20Balances.forEach(erc20 => {
-      const { chainId, address, balance, logo, name, symbol, decimals, priceUSD } = erc20;
+    wallet.erc20Balances.forEach((erc20) => {
+      const {
+        chainId,
+        address,
+        balance,
+        logo,
+        name,
+        symbol,
+        decimals,
+        priceUSD,
+        chainName,
+      } = erc20;
       const key = `${chainId}_${address}`;
 
       if (!aggregatedBalances.erc20[key]) {
@@ -37,12 +49,13 @@ export function aggregateBalances(data) {
           logo,
           name,
           symbol,
-          decimals
+          decimals,
+          chainName,
         };
       }
 
       aggregatedBalances.erc20[key].balance += balance;
-      aggregatedBalances.erc20[key].priceUSD = priceUSD;
+      aggregatedBalances.erc20[key].priceUSD += priceUSD;
     });
   });
 
@@ -52,6 +65,6 @@ export function aggregateBalances(data) {
 
   return {
     native: nativeResult,
-    erc20: erc20Result
+    erc20: erc20Result,
   };
 }

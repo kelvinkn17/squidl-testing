@@ -165,7 +165,7 @@ export const userRoutes = (app, _, done) => {
               spendPublicKey: metaAddressInfo.spendPublicKey,
               viewingPublicKey: metaAddressInfo.viewingPublicKey,
             },
-          })
+          }),
         ]);
 
         console.log({ updatedUser, updatedAlias });
@@ -238,16 +238,16 @@ export const userRoutes = (app, _, done) => {
             data.protocol_name === "native" || data.protocol_name === "token"
         )
           ? portfolioData.result
-            .filter(
-              (data) =>
-                data.protocol_name === "native" ||
-                data.protocol_name === "token"
-            )
-            .flatMap((data) => data.result)
-            .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
-            .reduce((acc, curr) => {
-              return acc + parseFloat(curr.value_usd);
-            }, 0)
+              .filter(
+                (data) =>
+                  data.protocol_name === "native" ||
+                  data.protocol_name === "token"
+              )
+              .flatMap((data) => data.result)
+              .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
+              .reduce((acc, curr) => {
+                return acc + parseFloat(curr.value_usd);
+              }, 0)
           : 0;
 
         const tokens = [];
@@ -454,103 +454,140 @@ export const userRoutes = (app, _, done) => {
                 select: {
                   chainId: true,
                   isNative: true,
-                  token: { select: { address: true } }
-                }
-              }
+                  token: { select: { address: true } },
+                },
+              },
             },
-          }
+          },
         },
       });
 
-      if (!aliasData) return reply.status(404).send({ message: "Alias not found" });
+      if (!aliasData)
+        return reply.status(404).send({ message: "Alias not found" });
       const stealthAddressesData = aliasData.stealthAddresses;
 
-      let stealthAddressWithAssets = stealthAddressesData.map(stealthAddress => {
-        const nativeTokens = new Set();
-        const erc20Tokens = new Map();
+      let stealthAddressWithAssets = stealthAddressesData.map(
+        (stealthAddress) => {
+          const nativeTokens = new Set();
+          const erc20Tokens = new Map();
 
-        stealthAddress.transactions.forEach(({ chainId, isNative, token }) => {
-          if (isNative) nativeTokens.add(chainId);
-          else if (token?.address) erc20Tokens.set(`${chainId}_${token.address}`, { chainId, address: token.address });
-        });
+          stealthAddress.transactions.forEach(
+            ({ chainId, isNative, token }) => {
+              if (isNative) nativeTokens.add(chainId);
+              else if (token?.address)
+                erc20Tokens.set(`${chainId}_${token.address}`, {
+                  chainId,
+                  address: token.address,
+                });
+            }
+          );
 
-        return {
-          ...stealthAddress,
-          nativeTokens: [...nativeTokens],
-          erc20Tokens: [...erc20Tokens.values()]
-        };
-      });
+          return {
+            ...stealthAddress,
+            nativeTokens: [...nativeTokens],
+            erc20Tokens: [...erc20Tokens.values()],
+          };
+        }
+      );
 
       // Fetch native and ERC20 token balances in parallel
-      await Promise.all(stealthAddressWithAssets.map(async stealthAddress => {
-        const providerPromises = stealthAddress.nativeTokens.map(async chainId => {
-          const network = CHAINS.find(chain => chain.id === chainId);
-          const provider = new JsonRpcProvider(network.rpcUrl);
-          const balance = await provider.getBalance(stealthAddress.address);
+      console.log({ stealthAddressWithAssets });
+      await Promise.all(
+        stealthAddressWithAssets.map(async (stealthAddress) => {
+          const providerPromises = stealthAddress.nativeTokens.map(
+            async (chainId) => {
+              const network = CHAINS.find((chain) => chain.id === chainId);
+              const provider = new JsonRpcProvider(network.rpcUrl);
+              const balance = await provider.getBalance(stealthAddress.address);
 
-          const formattedBalance = parseFloat(ethers.formatEther(balance));
+              const formattedBalance = parseFloat(ethers.formatEther(balance));
 
-          const nativeToken = await prismaClient.nativeToken.findFirst({
-            where: { chainId },
-            select: { name: true, symbol: true, logo: true, priceUSD: true }
-          });
+              console.log({
+                chainId,
+                stealthAddress: stealthAddress.address,
+                formattedBalance,
+              });
 
-          return {
-            chainId,
-            balance: formattedBalance,
-            priceUSD: nativeToken.priceUSD * formattedBalance,
-            nativeToken: nativeToken
-          };
-        });
+              const nativeToken = await prismaClient.nativeToken.findFirst({
+                where: { chainId },
+                select: {
+                  name: true,
+                  symbol: true,
+                  logo: true,
+                  priceUSD: true,
+                },
+              });
 
-        const contractPromises = stealthAddress.erc20Tokens.map(async ({ chainId, address }) => {
-          const network = CHAINS.find(chain => chain.id === chainId);
-          const provider = new JsonRpcProvider(network.rpcUrl);
-          const contract = new Contract(address, erc20Abi, provider);
-          const balance = await contract.balanceOf(stealthAddress.address);
-          const formattedBalance = parseFloat(ethers.formatUnits(balance, 18));
+              return {
+                chainId,
+                balance: formattedBalance,
+                chainName: network.name,
+                priceUSD: nativeToken.priceUSD * formattedBalance,
+                nativeToken: nativeToken,
+              };
+            }
+          );
 
-          const tokenMetadata = await getTokenMetadata({ tokenAddress: address, chainId });
-          return {
-            chainId,
-            address,
-            balance: formattedBalance,
-            token: {
-              name: tokenMetadata.name,
-              symbol: tokenMetadata.symbol,
-              logo: tokenMetadata.logo,
-              decimals: tokenMetadata.decimals,
-              priceUSD: tokenMetadata.priceUSD
-            },
-            priceUSD: tokenMetadata.priceUSD * formattedBalance,
-          };
-        });
+          const contractPromises = stealthAddress.erc20Tokens.map(
+            async ({ chainId, address }) => {
+              const network = CHAINS.find((chain) => chain.id === chainId);
+              const provider = new JsonRpcProvider(network.rpcUrl);
+              const contract = new Contract(address, erc20Abi, provider);
+              const balance = await contract.balanceOf(stealthAddress.address);
+              const formattedBalance = parseFloat(
+                ethers.formatUnits(balance, 18)
+              );
 
-        // Collect balances
-        stealthAddress.nativeBalances = await Promise.all(providerPromises);
-        stealthAddress.erc20Balances = await Promise.all(contractPromises);
+              const tokenMetadata = await getTokenMetadata({
+                tokenAddress: address,
+                chainId,
+              });
+              return {
+                chainId,
+                address,
+                balance: formattedBalance,
+                chainName: network.name,
+                token: {
+                  name: tokenMetadata.name,
+                  symbol: tokenMetadata.symbol,
+                  logo: tokenMetadata.logo,
+                  decimals: tokenMetadata.decimals,
+                  priceUSD: tokenMetadata.priceUSD,
+                },
+                priceUSD: tokenMetadata.priceUSD * formattedBalance,
+              };
+            }
+          );
 
-        delete stealthAddress.nativeTokens;
-        delete stealthAddress.erc20Tokens;
-        delete stealthAddress.transactions;
-      }));
+          // Collect balances
+          stealthAddress.nativeBalances = await Promise.all(providerPromises);
+          stealthAddress.erc20Balances = await Promise.all(contractPromises);
+
+          delete stealthAddress.nativeTokens;
+          delete stealthAddress.erc20Tokens;
+          delete stealthAddress.transactions;
+        })
+      );
 
       // Remove stealth addresses with no balances (empty native and erc20 balances)
-      stealthAddressWithAssets = stealthAddressWithAssets.filter(stealthAddress => stealthAddress.nativeBalances.length > 0 || stealthAddress.erc20Balances.length > 0);
+      stealthAddressWithAssets = stealthAddressWithAssets.filter(
+        (stealthAddress) =>
+          stealthAddress.nativeBalances.length > 0 ||
+          stealthAddress.erc20Balances.length > 0
+      );
 
       // Aggregate balances
       const aggregatedBalances = aggregateBalances(stealthAddressWithAssets);
 
       return reply.send({
         aggregatedBalances,
-        stealthAddresses: stealthAddressWithAssets
+        stealthAddresses: stealthAddressWithAssets,
       });
     } catch (e) {
       console.error("Error getting wallet assets", e);
       return reply.status(500).send({ message: "Error getting wallet assets" });
     }
   });
-
 
   app.get(
     "/wallet-assets/:fullAlias/transactions",
@@ -571,9 +608,9 @@ export const userRoutes = (app, _, done) => {
                 alias: alias,
                 user: {
                   username: username,
-                }
-              }
-            }
+                },
+              },
+            },
           },
           select: {
             chainId: true,
@@ -583,8 +620,8 @@ export const userRoutes = (app, _, done) => {
                 name: true,
                 blockExplorerUrl: true,
                 isTestnet: true,
-                nativeToken: true
-              }
+                nativeToken: true,
+              },
             },
             fromAddress: true,
             toAddress: true,
@@ -598,23 +635,23 @@ export const userRoutes = (app, _, done) => {
                 decimals: true,
                 stats: {
                   select: {
-                    priceUSD: true
-                  }
-                }
-              }
+                    priceUSD: true,
+                  },
+                },
+              },
             },
             value: true,
             amount: true,
             txHash: true,
             stealthAddress: {
               select: {
-                address: true
-              }
+                address: true,
+              },
             },
           },
           orderBy: {
-            createdAt: "desc"
-          }
+            createdAt: "desc",
+          },
         });
 
         return reply.send(transactions);
