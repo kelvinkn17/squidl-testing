@@ -8,7 +8,7 @@ import { ALLOWED_CHAIN_IDS, CHAINS } from "../../config.js";
 import { verifyFields } from "../../utils/request.js";
 import { Contract, ethers, JsonRpcProvider } from "ethers";
 import { getTokenMetadata } from "../../utils/tokenUtils.js";
-import { aggregateBalances } from "./helpers.js";
+import { aggregateBalances, getAliasTotalBalanceUSD } from "./helpers.js";
 
 /**
  *
@@ -238,16 +238,16 @@ export const userRoutes = (app, _, done) => {
             data.protocol_name === "native" || data.protocol_name === "token"
         )
           ? portfolioData.result
-            .filter(
-              (data) =>
-                data.protocol_name === "native" ||
-                data.protocol_name === "token"
-            )
-            .flatMap((data) => data.result)
-            .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
-            .reduce((acc, curr) => {
-              return acc + parseFloat(curr.value_usd);
-            }, 0)
+              .filter(
+                (data) =>
+                  data.protocol_name === "native" ||
+                  data.protocol_name === "token"
+              )
+              .flatMap((data) => data.result)
+              .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
+              .reduce((acc, curr) => {
+                return acc + parseFloat(curr.value_usd);
+              }, 0)
           : 0;
 
         const tokens = [];
@@ -429,6 +429,45 @@ export const userRoutes = (app, _, done) => {
   //   }
   // );
 
+  app.get(
+    "/wallet-assets/:username/total-balance",
+    async function (req, reply) {
+      const { username } = req.params;
+
+      try {
+        const user = await prismaClient.user.findFirst({
+          where: { username },
+          include: {
+            aliases: true,
+          },
+        });
+
+        if (!user) {
+          return reply.send(0);
+        }
+
+        const aliases = user.aliases;
+
+        let totalBalanceUSD = 0;
+        for (const alias of aliases) {
+          if (alias.alias === "") continue;
+          const balance = await getAliasTotalBalanceUSD(
+            alias.alias,
+            user.username
+          );
+          totalBalanceUSD += balance;
+        }
+
+        return reply.send(totalBalanceUSD);
+      } catch (e) {
+        console.log("Error getting total balances", e);
+        return reply.status(500).send({
+          message: "Error getting total balances",
+        });
+      }
+    }
+  );
+
   app.get("/wallet-assets/:fullAlias/assets", async function (req, reply) {
     try {
       const { fullAlias } = req.params;
@@ -565,7 +604,7 @@ export const userRoutes = (app, _, done) => {
                   symbol: tokenMetadata.symbol,
                   logo: tokenMetadata.logo,
                   decimals: tokenMetadata.decimals,
-                  priceUSD: tokenPrice.stats.priceUSD
+                  priceUSD: tokenPrice.stats.priceUSD,
                 },
                 balanceUSD: tokenPrice.stats.priceUSD * formattedBalance,
               };
