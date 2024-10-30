@@ -468,6 +468,180 @@ export const userRoutes = (app, _, done) => {
     }
   );
 
+  app.get("/wallet-assets/:username/all-assets", async function (req, reply) {
+    const { username } = req.params;
+
+    if (!username) {
+      return reply.status(400).send({
+        message: "Username is required",
+      });
+    }
+
+    try {
+      // Fetch all aliases and related stealth addresses for the user
+      const userData = await prismaClient.user.findFirst({
+        where: { username },
+        include: {
+          aliases: {
+            include: {
+              stealthAddresses: {
+                where: { isTransacted: true },
+                select: {
+                  address: true,
+                  transactions: {
+                    select: {
+                      chainId: true,
+                      isNative: true,
+                      token: { select: { address: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!userData) {
+        return reply.status(404).send({ message: "User not found" });
+      }
+
+      const allStealthAddresses = [];
+
+      // Loop over each alias and process balances for each stealth address
+      for (const alias of userData.aliases) {
+        const stealthAddresses = alias.stealthAddresses.map(
+          (stealthAddress) => {
+            const nativeTokens = new Set();
+            const erc20Tokens = new Map();
+
+            stealthAddress.transactions.forEach(
+              ({ chainId, isNative, token }) => {
+                if (isNative) nativeTokens.add(chainId);
+                else if (token?.address) {
+                  erc20Tokens.set(`${chainId}_${token.address}`, {
+                    chainId,
+                    address: token.address,
+                  });
+                }
+              }
+            );
+
+            return {
+              ...stealthAddress,
+              nativeTokens: [...nativeTokens],
+              erc20Tokens: [...erc20Tokens.values()],
+            };
+          }
+        );
+
+        // Fetch balances in parallel for all stealth addresses in this alias
+        await Promise.all(
+          stealthAddresses.map(async (stealthAddress) => {
+            const nativeBalancePromises = stealthAddress.nativeTokens.map(
+              async (chainId) => {
+                const network = CHAINS.find((chain) => chain.id === chainId);
+                const provider = new JsonRpcProvider(network.rpcUrl);
+                const balance = await provider.getBalance(
+                  stealthAddress.address
+                );
+                const formattedBalance = parseFloat(
+                  ethers.formatEther(balance)
+                );
+
+                const nativeToken = await prismaClient.nativeToken.findFirst({
+                  where: { chainId },
+                  select: {
+                    name: true,
+                    symbol: true,
+                    logo: true,
+                    priceUSD: true,
+                  },
+                });
+
+                return {
+                  chainId,
+                  balance: formattedBalance,
+                  chainName: network.name,
+                  chainLogo: network.imageUrl,
+                  priceUSD: nativeToken.priceUSD * formattedBalance,
+                  nativeToken,
+                };
+              }
+            );
+
+            const erc20BalancePromises = stealthAddress.erc20Tokens.map(
+              async ({ chainId, address }) => {
+                const network = CHAINS.find((chain) => chain.id === chainId);
+                const provider = new JsonRpcProvider(network.rpcUrl);
+                const contract = new Contract(address, erc20Abi, provider);
+                const balance = await contract.balanceOf(
+                  stealthAddress.address
+                );
+                const formattedBalance = parseFloat(
+                  ethers.formatUnits(balance, 18)
+                );
+
+                const tokenMetadata = await getTokenMetadata({
+                  tokenAddress: address,
+                  chainId,
+                });
+                const tokenPrice = await prismaClient.token.findFirst({
+                  where: { address },
+                  select: { stats: { select: { priceUSD: true } } },
+                });
+
+                return {
+                  chainId,
+                  address,
+                  balance: formattedBalance,
+                  chainName: network.name,
+                  chainLogo: network.imageUrl,
+                  token: {
+                    name: tokenMetadata.name,
+                    symbol: tokenMetadata.symbol,
+                    logo: tokenMetadata.logo,
+                    decimals: tokenMetadata.decimals,
+                    priceUSD: tokenPrice.stats.priceUSD,
+                  },
+                  balanceUSD: tokenPrice.stats.priceUSD * formattedBalance,
+                };
+              }
+            );
+
+            // Assign balances to the stealth address
+            stealthAddress.nativeBalances = await Promise.all(
+              nativeBalancePromises
+            );
+            stealthAddress.erc20Balances = await Promise.all(
+              erc20BalancePromises
+            );
+
+            delete stealthAddress.nativeTokens;
+            delete stealthAddress.erc20Tokens;
+            delete stealthAddress.transactions;
+
+            // Add processed stealth address to the global list
+            allStealthAddresses.push(stealthAddress);
+          })
+        );
+      }
+
+      // Aggregate all balances across aliases
+      const { aggregatedBalances, totalBalanceUSD } =
+        aggregateBalances(allStealthAddresses);
+
+      return reply.send({
+        aggregatedBalances,
+        stealthAddresses: allStealthAddresses,
+        totalBalanceUSD,
+      });
+    } catch (e) {
+      console.error("Error getting wallet assets", e);
+      return reply.status(500).send({ message: "Error getting wallet assets" });
+    }
+  });
+
   app.get("/wallet-assets/:fullAlias/assets", async function (req, reply) {
     try {
       const { fullAlias } = req.params;
