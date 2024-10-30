@@ -704,22 +704,24 @@ export const userRoutes = (app, _, done) => {
       );
 
       // Fetch native and ERC20 token balances in parallel
-      console.log({ stealthAddressWithAssets });
       await Promise.all(
         stealthAddressWithAssets.map(async (stealthAddress) => {
           const providerPromises = stealthAddress.nativeTokens.map(
             async (chainId) => {
               const network = CHAINS.find((chain) => chain.id === chainId);
+              if(!network) return;
+              
               const provider = new JsonRpcProvider(network.rpcUrl);
+
               const balance = await provider.getBalance(stealthAddress.address);
 
               const formattedBalance = parseFloat(ethers.formatEther(balance));
 
-              console.log({
-                chainId,
-                stealthAddress: stealthAddress.address,
-                formattedBalance,
-              });
+              // console.log({
+              //   chainId,
+              //   stealthAddress: stealthAddress.address,
+              //   formattedBalance,
+              // });
 
               const nativeToken = await prismaClient.nativeToken.findFirst({
                 where: { chainId },
@@ -745,6 +747,8 @@ export const userRoutes = (app, _, done) => {
           const contractPromises = stealthAddress.erc20Tokens.map(
             async ({ chainId, address }) => {
               const network = CHAINS.find((chain) => chain.id === chainId);
+              if(!network) return;
+
               const provider = new JsonRpcProvider(network.rpcUrl);
               const contract = new Contract(address, erc20Abi, provider);
               const balance = await contract.balanceOf(stealthAddress.address);
@@ -762,7 +766,7 @@ export const userRoutes = (app, _, done) => {
                 select: { stats: { select: { priceUSD: true } } },
               });
 
-              console.log("token", tokenMetadata);
+              // console.log('token', tokenMetadata);
               return {
                 chainId,
                 address,
