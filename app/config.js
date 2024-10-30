@@ -14,7 +14,9 @@ export const OLD_CHAINS = {
         name: "Ethereum",
         symbol: "ETH",
         logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
-      }
+        originalChainId: 1,
+        wrappedTokenAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      },
     },
     {
       id: 137,
@@ -31,6 +33,8 @@ export const OLD_CHAINS = {
         name: "Polygon",
         symbol: "POL",
         logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/matic.svg",
+        originalChainId: 137,
+        wrappedTokenAddress: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
       }
     },
   ],
@@ -49,6 +53,8 @@ export const OLD_CHAINS = {
         name: "Ethereum",
         symbol: "ETH",
         logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+        originalChainId: 1,
+        wrappedTokenAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
       }
     },
     {
@@ -123,6 +129,8 @@ export const CHAINS = [
       name: "Ethereum",
       symbol: "ETH",
       logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+      originalChainId: 1,
+      wrappedTokenAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
     }
   },
   {
@@ -140,6 +148,8 @@ export const CHAINS = [
       name: "Test Oasis",
       symbol: "TEST",
       logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
+      originalChainId: 23294,
+      wrappedTokenAddress: "0x21c718c22d52d0f3a789b752d4c2fd5908a8a733",
     }
   },
   /* --------------------------------- Mainnet -------------------------------- */
@@ -157,6 +167,8 @@ export const CHAINS = [
       name: "Ethereum",
       symbol: "ETH",
       logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+      originalChainId: 1,
+      wrappedTokenAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
     }
   },
   {
@@ -174,6 +186,8 @@ export const CHAINS = [
       name: "Polygon",
       symbol: "POL",
       logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/matic.svg",
+      originalChainId: 137,
+      wrappedTokenAddress: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
     }
   },
   {
@@ -191,6 +205,8 @@ export const CHAINS = [
       name: "ROSE",
       symbol: "ROSE",
       logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
+      originalChainId: 23294,
+      wrappedTokenAddress: "0x21c718c22d52d0f3a789b752d4c2fd5908a8a733",
     }
   },
 ]
