@@ -36,6 +36,7 @@ model NativeToken {
   chainId Int @unique
   chain   Chain @relation(fields: [chainId], references: [id], onDelete: Cascade)
 
+  wrappedTokenAddress String?
   name   String
   symbol String
   logo   String?
