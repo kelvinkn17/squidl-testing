@@ -10,18 +10,16 @@ export const getTokenMetadata = async ({
   chainId
 }) => {
   try {
-    let existingToken;
-    // let existingToken = await prismaClient.token.findFirst({
-    //   where: {
-    //     chainId: chainId,
-    //     address: tokenAddress
-    //   }
-    // })
+    let existingToken = await prismaClient.token.findFirst({
+      where: {
+        chainId: chainId,
+        address: tokenAddress
+      }
+    })
 
-    // if (existingToken) {
-    //   return existingToken;
-    // }
-
+    if (existingToken) {
+      return existingToken;
+    }
 
     const network = CHAINS.find(
       (network) => network.id === chainId

@@ -238,16 +238,16 @@ export const userRoutes = (app, _, done) => {
             data.protocol_name === "native" || data.protocol_name === "token"
         )
           ? portfolioData.result
-              .filter(
-                (data) =>
-                  data.protocol_name === "native" ||
-                  data.protocol_name === "token"
-              )
-              .flatMap((data) => data.result)
-              .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
-              .reduce((acc, curr) => {
-                return acc + parseFloat(curr.value_usd);
-              }, 0)
+            .filter(
+              (data) =>
+                data.protocol_name === "native" ||
+                data.protocol_name === "token"
+            )
+            .flatMap((data) => data.result)
+            .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
+            .reduce((acc, curr) => {
+              return acc + parseFloat(curr.value_usd);
+            }, 0)
           : 0;
 
         const tokens = [];
@@ -488,6 +488,7 @@ export const userRoutes = (app, _, done) => {
                 where: { isTransacted: true },
                 select: {
                   address: true,
+                  ephemeralPub: true,
                   transactions: {
                     select: {
                       chainId: true,
@@ -496,6 +497,7 @@ export const userRoutes = (app, _, done) => {
                     },
                   },
                 },
+                take: 20,
               },
             },
           },
@@ -527,6 +529,8 @@ export const userRoutes = (app, _, done) => {
               }
             );
 
+            console.log('stealthAddress', stealthAddress);
+
             return {
               ...stealthAddress,
               nativeTokens: [...nativeTokens],
@@ -541,6 +545,8 @@ export const userRoutes = (app, _, done) => {
             const nativeBalancePromises = stealthAddress.nativeTokens.map(
               async (chainId) => {
                 const network = CHAINS.find((chain) => chain.id === chainId);
+                if (!network) return;
+
                 const provider = new JsonRpcProvider(network.rpcUrl);
                 const balance = await provider.getBalance(
                   stealthAddress.address
@@ -573,6 +579,8 @@ export const userRoutes = (app, _, done) => {
             const erc20BalancePromises = stealthAddress.erc20Tokens.map(
               async ({ chainId, address }) => {
                 const network = CHAINS.find((chain) => chain.id === chainId);
+                if (!network) return;
+
                 const provider = new JsonRpcProvider(network.rpcUrl);
                 const contract = new Contract(address, erc20Abi, provider);
                 const balance = await contract.balanceOf(
@@ -709,8 +717,8 @@ export const userRoutes = (app, _, done) => {
           const providerPromises = stealthAddress.nativeTokens.map(
             async (chainId) => {
               const network = CHAINS.find((chain) => chain.id === chainId);
-              if(!network) return;
-              
+              if (!network) return;
+
               const provider = new JsonRpcProvider(network.rpcUrl);
 
               const balance = await provider.getBalance(stealthAddress.address);
@@ -747,7 +755,7 @@ export const userRoutes = (app, _, done) => {
           const contractPromises = stealthAddress.erc20Tokens.map(
             async ({ chainId, address }) => {
               const network = CHAINS.find((chain) => chain.id === chainId);
-              if(!network) return;
+              if (!network) return;
 
               const provider = new JsonRpcProvider(network.rpcUrl);
               const contract = new Contract(address, erc20Abi, provider);
