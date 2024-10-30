@@ -10,6 +10,11 @@ export const OLD_CHAINS = {
       blockExplorerUrl: "https://etherscan.io",
       imageUrl:
         "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+      nativeTokenData: {
+        name: "Ethereum",
+        symbol: "ETH",
+        logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+      }
     },
     {
       id: 137,
@@ -22,6 +27,11 @@ export const OLD_CHAINS = {
       blockExplorerUrl: "https://polygonscan.com",
       imageUrl:
         "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/matic.svg",
+      nativeTokenData: {
+        name: "Polygon",
+        symbol: "POL",
+        logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/matic.svg",
+      }
     },
   ],
   testnet: [
@@ -35,6 +45,11 @@ export const OLD_CHAINS = {
       blockExplorerUrl: "https://sepolia.etherscan.io/",
       imageUrl:
         "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+      nativeTokenData: {
+        name: "Ethereum",
+        symbol: "ETH",
+        logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+      }
     },
     {
       id: 23295,
@@ -47,6 +62,11 @@ export const OLD_CHAINS = {
       imageUrl:
         "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
       compatibility: [137],
+      nativeTokenData: {
+        name: "Test Oasis",
+        symbol: "TEST",
+        logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
+      }
     }
   ],
   oasis: {
@@ -61,6 +81,11 @@ export const OLD_CHAINS = {
       imageUrl:
         "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
       compatibility: [137],
+      nativeTokenData: {
+        name: "ROSE",
+        symbol: "ROSE",
+        logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
+      }
     },
     testnet: {
       id: 23295,
@@ -73,6 +98,11 @@ export const OLD_CHAINS = {
       imageUrl:
         "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
       compatibility: [137],
+      nativeTokenData: {
+        name: "Test Oasis",
+        symbol: "TEST",
+        logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
+      }
     },
   },
 };
@@ -89,6 +119,11 @@ export const CHAINS = [
     blockExplorerUrl: "https://sepolia.etherscan.io/",
     imageUrl:
       "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+    nativeTokenData: {
+      name: "Ethereum",
+      symbol: "ETH",
+      logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+    }
   },
   {
     id: 23295,
@@ -101,18 +136,11 @@ export const CHAINS = [
     imageUrl:
       "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
     compatibility: [137],
-  },
-  {
-    id: 23295,
-    isTestnet: true,
-    name: "Oasis Sapphire Testnet",
-    chainlistUrl: "https://chainlist.org/chain/23295",
-    rpcUrl: "https://testnet.sapphire.oasis.io",
-    nativeToken: "TEST",
-    blockExplorerUrl: "https://explorer.oasis.io/testnet/sapphire",
-    imageUrl:
-      "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
-    compatibility: [137],
+    nativeTokenData: {
+      name: "Test Oasis",
+      symbol: "TEST",
+      logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
+    }
   },
   /* --------------------------------- Mainnet -------------------------------- */
   {
@@ -125,6 +153,11 @@ export const CHAINS = [
     blockExplorerUrl: "https://etherscan.io",
     imageUrl:
       "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+    nativeTokenData: {
+      name: "Ethereum",
+      symbol: "ETH",
+      logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
+    }
   },
   {
     id: 137,
@@ -137,6 +170,11 @@ export const CHAINS = [
     blockExplorerUrl: "https://polygonscan.com",
     imageUrl:
       "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/matic.svg",
+    nativeTokenData: {
+      name: "Polygon",
+      symbol: "POL",
+      logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/matic.svg",
+    }
   },
   {
     id: 23294,
@@ -149,6 +187,11 @@ export const CHAINS = [
     imageUrl:
       "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
     compatibility: [137],
+    nativeTokenData: {
+      name: "ROSE",
+      symbol: "ROSE",
+      logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
+    }
   },
 ]
 

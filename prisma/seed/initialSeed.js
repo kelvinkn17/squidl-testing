@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Upsert chains (Testnet and Mainnet)
-  for (const chain of CHAINS.filter((chain) => chain.isTestnet)) {
+  for (const chain of CHAINS) {
     await prisma.chain.upsert({
       where: {
         id: chain.id,
@@ -15,42 +15,33 @@ async function main() {
         name: chain.name,
         chainlistUrl: chain.chainlistUrl,
         rpcUrl: chain.rpcUrl,
-        nativeToken: chain.nativeToken,
         blockExplorerUrl: chain.blockExplorerUrl,
-        isTestnet: true,
+        isTestnet: true
       },
       update: {
         name: chain.name,
         chainlistUrl: chain.chainlistUrl,
         rpcUrl: chain.rpcUrl,
-        nativeToken: chain.nativeToken,
         blockExplorerUrl: chain.blockExplorerUrl,
         isTestnet: true,
       },
     });
-  }
 
-  for (const chain of CHAINS.filter((chain) => !chain.isTestnet)) {
-    await prisma.chain.upsert({
+    // Upsert Native Token
+    await prisma.nativeToken.upsert({
       where: {
-        id: chain.id,
+        chainId: chain.id,
       },
       create: {
-        id: chain.id,
-        name: chain.name,
-        chainlistUrl: chain.chainlistUrl,
-        rpcUrl: chain.rpcUrl,
-        nativeToken: chain.nativeToken,
-        blockExplorerUrl: chain.blockExplorerUrl,
-        isTestnet: false,
+        chainId: chain.id,
+        name: chain.nativeTokenData.name,
+        symbol: chain.nativeTokenData.symbol,
+        logo: chain.nativeTokenData.logo,
       },
       update: {
-        name: chain.name,
-        chainlistUrl: chain.chainlistUrl,
-        rpcUrl: chain.rpcUrl,
-        nativeToken: chain.nativeToken,
-        blockExplorerUrl: chain.blockExplorerUrl,
-        isTestnet: false,
+        name: chain.nativeTokenData.name,
+        symbol: chain.nativeTokenData.symbol,
+        logo: chain.nativeTokenData.logo,
       },
     });
   }

@@ -66,7 +66,9 @@ export const getTokenMetadata = async ({
     })
 
     // Get the pair data from dexscreener, if testnet, set the price to 1 USD
+    let priceUSD;
     if (network.isTestnet) {
+      priceUSD = 1;
       await prismaClient.tokenStats.upsert({
         where: {
           tokenId: existingToken.id
@@ -77,6 +79,8 @@ export const getTokenMetadata = async ({
         },
         update: {}
       })
+      existingToken.priceUSD = priceUSD;
+
       return existingToken;
     } else {
       try {
@@ -85,7 +89,9 @@ export const getTokenMetadata = async ({
         });
   
         const pair = dexsResponse.pairs[0];
-        const priceUSD = pair ? parseFloat(pair.priceUsd) : null;
+        priceUSD = pair ? parseFloat(pair.priceUsd) : null;
+
+        existingToken.priceUSD = priceUSD;
   
         await prismaClient.tokenStats.upsert({
           where: {

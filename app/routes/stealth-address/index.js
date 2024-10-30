@@ -498,9 +498,9 @@ export const stealthAddressRoutes = (app, _, done) => {
           display: dnsDecodeName(decodedResolveCall[0]),
           records: {
             name: name,
-            description: "This is a test description",
+            description: "SQUIDL",
             // TODO: Includes alias too
-            url: `https://${username}.squidl.eth`,
+            url: `https://${username}.squidl.me`,
           },
         },
       });

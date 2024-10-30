@@ -429,199 +429,128 @@ export const userRoutes = (app, _, done) => {
   //   }
   // );
 
-  app.get(
-    "/wallet-assets/:fullAlias/assets",
-    async function (req, reply) {
-      try {
-        const { fullAlias } = req.params;
-        const { isTestnet = true } = req.query;
+  app.get("/wallet-assets/:fullAlias/assets", async function (req, reply) {
+    try {
+      const { fullAlias } = req.params;
+      const { isTestnet = true } = req.query;
 
-        // Split the full alias to get the alias
-        const aliasParts = fullAlias.split(".");
-        const alias = aliasParts[aliasParts.length - 4] || "";
-        const username = aliasParts[aliasParts.length - 3];
+      const aliasParts = fullAlias.split(".");
+      const alias = aliasParts[aliasParts.length - 4] || "";
+      const username = aliasParts[aliasParts.length - 3];
 
-        console.log({
-          alias,
-          username,
-        })
-
-
-        const aliasData = await prismaClient.userAlias.findFirst({
-          where: {
-            alias: alias,
-            user: {
-              username: username,
-            }
-          },
-          include: {
-            stealthAddresses: {
-              where: {
-                isTransacted: true,
-              },
-              select: {
-                address: true,
-                ephemeralPub: true,
-                viewHint: true,
-                isTransacted: true,
-                createdAt: true,
-                transactions: {
-                  select: {
-                    chainId: true,
-                    chain: {
-                      select: {
-                        isTestnet: true,
-                        name: true,
-                        nativeToken: true,
-                        blockExplorerUrl: true
-                      }
-                    },
-                    fromAddress: true,
-                    toAddress: true,
-                    isNative: true,
-                    token: {
-                      select: {
-                        address: true,
-                      }
-                    },
-                    txHash: true,
-                    value: true,
-                    amount: true,
-                  }
+      // Fetch alias and related data in a single query
+      const aliasData = await prismaClient.userAlias.findFirst({
+        where: { alias, user: { username } },
+        include: {
+          stealthAddresses: {
+            where: { isTransacted: true },
+            select: {
+              address: true,
+              ephemeralPub: true,
+              viewHint: true,
+              isTransacted: true,
+              createdAt: true,
+              transactions: {
+                select: {
+                  chainId: true,
+                  isNative: true,
+                  token: { select: { address: true } }
                 }
-              },
+              }
             },
-          },
+          }
+        },
+      });
+
+      if (!aliasData) return reply.status(404).send({ message: "Alias not found" });
+      const stealthAddressesData = aliasData.stealthAddresses;
+
+      let stealthAddressWithAssets = stealthAddressesData.map(stealthAddress => {
+        const nativeTokens = new Set();
+        const erc20Tokens = new Map();
+
+        stealthAddress.transactions.forEach(({ chainId, isNative, token }) => {
+          if (isNative) nativeTokens.add(chainId);
+          else if (token?.address) erc20Tokens.set(`${chainId}_${token.address}`, { chainId, address: token.address });
         });
 
-        if (!aliasData) {
-          return reply.status(404).send({
-            message: "Alias not found",
+        return {
+          ...stealthAddress,
+          nativeTokens: [...nativeTokens],
+          erc20Tokens: [...erc20Tokens.values()]
+        };
+      });
+
+      // Fetch native and ERC20 token balances in parallel
+      await Promise.all(stealthAddressWithAssets.map(async stealthAddress => {
+        const providerPromises = stealthAddress.nativeTokens.map(async chainId => {
+          const network = CHAINS.find(chain => chain.id === chainId);
+          const provider = new JsonRpcProvider(network.rpcUrl);
+          const balance = await provider.getBalance(stealthAddress.address);
+
+          const formattedBalance = parseFloat(ethers.formatEther(balance));
+
+          const nativeToken = await prismaClient.nativeToken.findFirst({
+            where: { chainId },
+            select: { name: true, symbol: true, logo: true, priceUSD: true }
           });
-        }
 
-        const stealthAddressesData = aliasData.stealthAddresses;
+          return {
+            chainId,
+            balance: formattedBalance,
+            priceUSD: nativeToken.priceUSD * formattedBalance,
+            nativeToken: nativeToken
+          };
+        });
 
-        let stealthAddressWithAssets = [];
+        const contractPromises = stealthAddress.erc20Tokens.map(async ({ chainId, address }) => {
+          const network = CHAINS.find(chain => chain.id === chainId);
+          const provider = new JsonRpcProvider(network.rpcUrl);
+          const contract = new Contract(address, erc20Abi, provider);
+          const balance = await contract.balanceOf(stealthAddress.address);
+          const formattedBalance = parseFloat(ethers.formatUnits(balance, 18));
 
-        for (const stealthAddress of stealthAddressesData) {
-          // console.log('transactions', stealthAddress.transactions);
-
-          let nativeTokens = []; // { chainId: 1 }
-          let erc20Tokens = []; // { chainId: 1, address: "0x123" }
-
-          // Based on the transactions, 
-          // - when transactions[i].isNative list all the unique tokens by the transactions[i].chainId
-          // - when transactions[i].isNative is false, list all the unique tokens by the transactions[i].chainId and transactions[i].token.address
-          // This is done to make it easier to get all the balances for stealth address
-
-          for (const transaction of stealthAddress.transactions) {
-            if (transaction.isNative) {
-              if (!nativeTokens.includes(transaction.chainId)) {
-                nativeTokens.push(transaction.chainId);
-              }
-            } else {
-              if (!erc20Tokens.includes(transaction.chainId)) {
-                erc20Tokens.push({
-                  chainId: transaction.chainId,
-                  address: transaction.token.address
-                });
-              }
-            }
-          }
-
-          console.log({ nativeTokens, erc20Tokens });
-
-          // If nativeTokens or erc20Tokens is not empty, push the stealth address to the stealthAddressWithAssets
-          if (nativeTokens.length > 0 || erc20Tokens.length > 0) {
-            stealthAddressWithAssets.push({
-              ...stealthAddress,
-              nativeTokens,
-              erc20Tokens,
-            });
-          }
-        }
-
-        console.log('stealthAddressWithAssets', stealthAddressWithAssets);
-
-        for(const stealthAddress of stealthAddressWithAssets) {
-          // Get the native token balances if nativeTokens array is not empty
-          let nativeBalances = [];
-          for(const nativeBalance of stealthAddress.nativeTokens) {
-            // Get the native token balance
-            const network = CHAINS.find(chain => chain.id === nativeBalance);
-            const provider = new JsonRpcProvider(network.rpcUrl);
-
-            const balance = await provider.getBalance(stealthAddress.address);
-            const formattedBalance = parseFloat(ethers.formatEther(balance));
-
-            console.log(`Native token balance for stealth address ${stealthAddress.address} on chain ${network.name}: ${formattedBalance} ${network.nativeToken}`);
-            nativeBalances.push({
-              chainId: nativeBalance,
-              balance: formattedBalance,
-              nativeToken: network.nativeToken,
-              logo:  network.imageUrl
-            });
-          }
-
-          // Get the erc20 token balances if erc20Tokens array is not empty
-          let erc20Balances = [];
-          for(const erc20Balance of stealthAddress.erc20Tokens) {
-            // Get the erc20 token balance
-            const network = CHAINS.find(chain => chain.id === erc20Balance.chainId);
-            const provider = new JsonRpcProvider(network.rpcUrl);
-
-            const contract = new Contract(
-              erc20Balance.address,
-              erc20Abi,
-              provider
-            );
-
-            const balance = await contract.balanceOf(stealthAddress.address);
-            const formattedBalance = parseFloat(ethers.formatUnits(balance, 18));
-
-            const tokenMetadata = await getTokenMetadata({
-              tokenAddress: erc20Balance.address,
-              chainId: erc20Balance.chainId
-            })
-
-            console.log(`ERC20 token balance for stealth address ${stealthAddress.address} on chain ${network.name}: ${formattedBalance}`);
-            erc20Balances.push({
-              chainId: erc20Balance.chainId,
-              address: erc20Balance.address,
-              balance: formattedBalance,
-              logo: tokenMetadata.logo,
+          const tokenMetadata = await getTokenMetadata({ tokenAddress: address, chainId });
+          return {
+            chainId,
+            address,
+            balance: formattedBalance,
+            token: {
               name: tokenMetadata.name,
               symbol: tokenMetadata.symbol,
-              decimals: tokenMetadata.decimals
-            });
-          }
-
-          stealthAddress.nativeBalances = nativeBalances;
-          stealthAddress.erc20Balances = erc20Balances;
-
-          delete stealthAddress.nativeTokens;
-          delete stealthAddress.erc20Tokens;
-          delete stealthAddress.transactions;
-        }
-
-        const aggregatedBalances = aggregateBalances(stealthAddressWithAssets);
-        console.log('aggregatedBalances', aggregatedBalances);
-
-        const data = {
-          aggregatedBalances: aggregatedBalances,
-          stealthAddresses: stealthAddressWithAssets
-        }
-
-        return reply.send(data);
-      } catch (e) {
-        console.log("Error getting wallet assets", e);
-        return reply.status(500).send({
-          message: "Error getting wallet assets",
+              logo: tokenMetadata.logo,
+              decimals: tokenMetadata.decimals,
+              priceUSD: tokenMetadata.priceUSD
+            },
+            priceUSD: tokenMetadata.priceUSD * formattedBalance,
+          };
         });
-      }
+
+        // Collect balances
+        stealthAddress.nativeBalances = await Promise.all(providerPromises);
+        stealthAddress.erc20Balances = await Promise.all(contractPromises);
+
+        delete stealthAddress.nativeTokens;
+        delete stealthAddress.erc20Tokens;
+        delete stealthAddress.transactions;
+      }));
+
+      // Remove stealth addresses with no balances (empty native and erc20 balances)
+      stealthAddressWithAssets = stealthAddressWithAssets.filter(stealthAddress => stealthAddress.nativeBalances.length > 0 || stealthAddress.erc20Balances.length > 0);
+
+      // Aggregate balances
+      const aggregatedBalances = aggregateBalances(stealthAddressWithAssets);
+
+      return reply.send({
+        aggregatedBalances,
+        stealthAddresses: stealthAddressWithAssets
+      });
+    } catch (e) {
+      console.error("Error getting wallet assets", e);
+      return reply.status(500).send({ message: "Error getting wallet assets" });
     }
-  );
+  });
+
 
   app.get(
     "/wallet-assets/:fullAlias/transactions",

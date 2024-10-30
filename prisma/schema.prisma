@@ -18,12 +18,28 @@ model Chain {
   name             String
   chainlistUrl     String
   rpcUrl           String
-  nativeToken      String
   blockExplorerUrl String
   isTestnet        Boolean
 
+  nativeToken NativeToken?
+
   transactions Transaction[]
   tokens       Token[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NativeToken {
+  id String @id @default(cuid())
+
+  chainId Int @unique
+  chain   Chain @relation(fields: [chainId], references: [id], onDelete: Cascade)
+
+  name   String
+  symbol String
+  logo   String?
+  priceUSD    Float? @default(3500)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
