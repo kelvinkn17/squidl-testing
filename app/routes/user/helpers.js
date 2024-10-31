@@ -173,7 +173,7 @@ export async function getAliasTotalBalanceUSD(alias, username) {
     for (const erc20Token of stealthAddress.erc20Tokens) {
       const { chainId, address } = erc20Token;
       const network = CHAINS.find((chain) => chain.id === chainId);
-      if(!network) continue;
+      if (!network) continue;
 
       const provider = new JsonRpcProvider(network.rpcUrl);
       const contract = new Contract(address, erc20Abi, provider);
@@ -198,4 +198,35 @@ export async function getAliasTotalBalanceUSD(alias, username) {
   }
 
   return totalBalanceUSD;
+}
+
+export function getAliasesList({ stealthAddresses = [] }) {
+  const aliasBalances = {};
+
+  stealthAddresses.forEach((addressData) => {
+    // Calculate the total balance in USD by summing native and ERC20 balances
+    const totalBalanceUSD = [
+      ...(addressData.nativeBalances || []),
+      ...(addressData.erc20Balances || [])
+    ].reduce((total, balance) => total + (balance.priceUSD || balance.balanceUSD || 0), 0);
+
+    const { id, alias, createdAt } = addressData.alias;
+
+    if (aliasBalances[id]) {
+      // If the id already exists, add the balance and keep the earliest createdAt date
+      aliasBalances[id].balanceUSD += totalBalanceUSD;
+      aliasBalances[id].createdAt = new Date(Math.min(new Date(aliasBalances[id].createdAt), new Date(createdAt))).toISOString();
+    } else {
+      // Otherwise, create a new entry
+      aliasBalances[id] = { id, alias: alias || "", balanceUSD: totalBalanceUSD, createdAt };
+    }
+  });
+
+  // Convert to array, format balanceUSD, and sort by createdAt in ascending order
+  return Object.values(aliasBalances)
+    .map((item) => ({
+      ...item,
+      balanceUSD: item.balanceUSD.toFixed(2) // Format to 2 decimal places
+    }))
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 }

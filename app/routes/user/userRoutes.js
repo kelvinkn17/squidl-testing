@@ -8,7 +8,7 @@ import { ALLOWED_CHAIN_IDS, CHAINS } from "../../config.js";
 import { verifyFields } from "../../utils/request.js";
 import { Contract, ethers, JsonRpcProvider } from "ethers";
 import { getTokenMetadata } from "../../utils/tokenUtils.js";
-import { aggregateBalances, getAliasTotalBalanceUSD } from "./helpers.js";
+import { aggregateBalances, getAliasesList, getAliasTotalBalanceUSD } from "./helpers.js";
 
 /**
  *
@@ -333,16 +333,16 @@ export const userRoutes = (app, _, done) => {
             data.protocol_name === "native" || data.protocol_name === "token"
         )
           ? portfolioData.result
-              .filter(
-                (data) =>
-                  data.protocol_name === "native" ||
-                  data.protocol_name === "token"
-              )
-              .flatMap((data) => data.result)
-              .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
-              .reduce((acc, curr) => {
-                return acc + parseFloat(curr.value_usd);
-              }, 0)
+            .filter(
+              (data) =>
+                data.protocol_name === "native" ||
+                data.protocol_name === "token"
+            )
+            .flatMap((data) => data.result)
+            .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
+            .reduce((acc, curr) => {
+              return acc + parseFloat(curr.value_usd);
+            }, 0)
           : 0;
 
         const tokens = [];
@@ -580,10 +580,21 @@ export const userRoutes = (app, _, done) => {
           aliases: {
             include: {
               stealthAddresses: {
-                where: { isTransacted: true },
+                where: {
+                  isTransacted: true
+                },
                 select: {
                   address: true,
                   ephemeralPub: true,
+                  viewHint: true,
+                  createdAt: true,
+                  alias: {
+                    select: {
+                      id: true,
+                      alias: true,
+                      createdAt: true,
+                    }
+                  },
                   transactions: {
                     select: {
                       chainId: true,
@@ -734,7 +745,12 @@ export const userRoutes = (app, _, done) => {
       const { aggregatedBalances, totalBalanceUSD } =
         aggregateBalances(allStealthAddresses);
 
+      const aliasesList = getAliasesList({
+        stealthAddresses: allStealthAddresses
+      })
+
       return reply.send({
+        aliasesList,
         aggregatedBalances,
         stealthAddresses: allStealthAddresses,
         totalBalanceUSD,
@@ -766,6 +782,13 @@ export const userRoutes = (app, _, done) => {
               viewHint: true,
               isTransacted: true,
               createdAt: true,
+              alias: {
+                select: {
+                  id: true,
+                  alias: true,
+                  createdAt: true,
+                }
+              },
               transactions: {
                 select: {
                   chainId: true,
@@ -914,7 +937,12 @@ export const userRoutes = (app, _, done) => {
       // Order aggregated balances by the balanceUSD
       console.log("aggregatedBalances", aggregatedBalances);
 
+      const aliasesList = getAliasesList({
+        stealthAddresses: stealthAddressWithAssets
+      })
+
       return reply.send({
+        aliasesList,
         aggregatedBalances,
         stealthAddresses: stealthAddressWithAssets,
         totalBalanceUSD,
