@@ -16,14 +16,16 @@ async function main() {
         chainlistUrl: chain.chainlistUrl,
         rpcUrl: chain.rpcUrl,
         blockExplorerUrl: chain.blockExplorerUrl,
-        isTestnet: true
+        isTestnet: chain.isTestnet,
+        imageUrl: chain.imageUrl,
       },
       update: {
         name: chain.name,
         chainlistUrl: chain.chainlistUrl,
         rpcUrl: chain.rpcUrl,
         blockExplorerUrl: chain.blockExplorerUrl,
-        isTestnet: true,
+        isTestnet: chain.isTestnet,
+        imageUrl: chain.imageUrl,
       },
     });
 
