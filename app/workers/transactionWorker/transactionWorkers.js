@@ -32,13 +32,13 @@ export const transactionWorker = (app, _, done) => {
       const recentStealthAddresses = await prismaClient.stealthAddress.findMany({
         where: {
           createdAt: {
-            gte: new Date(Date.now() - 8 * 60 * 60 * 1000), // Created no more than 8 hours ago, this is done to avoid checking too many addresses
+            // gte: new Date(Date.now() - 8 * 60 * 60 * 1000), // Created no more than 8 hours ago, this is done to avoid checking too many addresses
           },
         },
         orderBy: {
           createdAt: "desc",
         },
-        take: 200,
+        take: 100
       });
 
       // console.log('recentStealthAddresses', recentStealthAddresses);
@@ -58,8 +58,8 @@ export const transactionWorker = (app, _, done) => {
 
       console.log("Checking stealth addresses", stealthAddresses);
 
-      // for (const chain of CHAINS) {
-      for (const chain of CHAINS.filter(chain => chain.isTestnet)) {
+      for (const chain of CHAINS) {
+      // for (const chain of CHAINS.filter(chain => chain.isTestnet)) {
         const web3 = new Web3(chain.rpcUrl);
 
         // Get the latest block number and calculate the range to check

@@ -493,11 +493,11 @@ export const userRoutes = (app, _, done) => {
                     select: {
                       chainId: true,
                       isNative: true,
-                      token: { select: { address: true } },
+                      token: { select: { address: true, decimals: true } },
                     },
                   },
                 },
-                take: 20,
+                take: 50
               },
             },
           },
@@ -524,6 +524,7 @@ export const userRoutes = (app, _, done) => {
                   erc20Tokens.set(`${chainId}_${token.address}`, {
                     chainId,
                     address: token.address,
+                    decimals: token.decimals
                   });
                 }
               }
@@ -576,8 +577,10 @@ export const userRoutes = (app, _, done) => {
               }
             );
 
+            console.log('stealthAddress.erc20Tokens', stealthAddress.erc20Tokens);
+
             const erc20BalancePromises = stealthAddress.erc20Tokens.map(
-              async ({ chainId, address }) => {
+              async ({ chainId, address, decimals }) => {
                 const network = CHAINS.find((chain) => chain.id === chainId);
                 if (!network) return;
 
@@ -587,7 +590,7 @@ export const userRoutes = (app, _, done) => {
                   stealthAddress.address
                 );
                 const formattedBalance = parseFloat(
-                  ethers.formatUnits(balance, 18)
+                  ethers.formatUnits(balance, decimals)
                 );
 
                 const tokenMetadata = await getTokenMetadata({
