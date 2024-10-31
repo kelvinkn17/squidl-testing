@@ -238,16 +238,16 @@ export const userRoutes = (app, _, done) => {
             data.protocol_name === "native" || data.protocol_name === "token"
         )
           ? portfolioData.result
-            .filter(
-              (data) =>
-                data.protocol_name === "native" ||
-                data.protocol_name === "token"
-            )
-            .flatMap((data) => data.result)
-            .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
-            .reduce((acc, curr) => {
-              return acc + parseFloat(curr.value_usd);
-            }, 0)
+              .filter(
+                (data) =>
+                  data.protocol_name === "native" ||
+                  data.protocol_name === "token"
+              )
+              .flatMap((data) => data.result)
+              .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
+              .reduce((acc, curr) => {
+                return acc + parseFloat(curr.value_usd);
+              }, 0)
           : 0;
 
         const tokens = [];
@@ -497,7 +497,7 @@ export const userRoutes = (app, _, done) => {
                     },
                   },
                 },
-                take: 50
+                take: 50,
               },
             },
           },
@@ -524,13 +524,13 @@ export const userRoutes = (app, _, done) => {
                   erc20Tokens.set(`${chainId}_${token.address}`, {
                     chainId,
                     address: token.address,
-                    decimals: token.decimals
+                    decimals: token.decimals,
                   });
                 }
               }
             );
 
-            console.log('stealthAddress', stealthAddress);
+            console.log("stealthAddress", stealthAddress);
 
             return {
               ...stealthAddress,
@@ -577,7 +577,10 @@ export const userRoutes = (app, _, done) => {
               }
             );
 
-            console.log('stealthAddress.erc20Tokens', stealthAddress.erc20Tokens);
+            console.log(
+              "stealthAddress.erc20Tokens",
+              stealthAddress.erc20Tokens
+            );
 
             const erc20BalancePromises = stealthAddress.erc20Tokens.map(
               async ({ chainId, address, decimals }) => {
@@ -763,14 +766,15 @@ export const userRoutes = (app, _, done) => {
               const provider = new JsonRpcProvider(network.rpcUrl);
               const contract = new Contract(address, erc20Abi, provider);
               const balance = await contract.balanceOf(stealthAddress.address);
-              const formattedBalance = parseFloat(
-                ethers.formatUnits(balance, 18)
-              );
 
               const tokenMetadata = await getTokenMetadata({
                 tokenAddress: address,
                 chainId,
               });
+
+              const formattedBalance = parseFloat(
+                ethers.formatUnits(balance, tokenMetadata.decimals)
+              );
 
               const tokenPrice = await prismaClient.token.findFirst({
                 where: { address },
@@ -791,7 +795,7 @@ export const userRoutes = (app, _, done) => {
                   decimals: tokenMetadata.decimals,
                   priceUSD: tokenPrice.stats.priceUSD,
                 },
-                balanceUSD: tokenPrice.stats.priceUSD * formattedBalance,
+                balanceUSD: (tokenPrice.stats.priceUSD || 0) * formattedBalance,
               };
             }
           );
