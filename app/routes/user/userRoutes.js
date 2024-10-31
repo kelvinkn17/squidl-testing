@@ -508,7 +508,7 @@ export const userRoutes = (app, _, done) => {
         return reply.status(404).send({ message: "User not found" });
       }
 
-      const allStealthAddresses = [];
+      let allStealthAddresses = [];
 
       // Loop over each alias and process balances for each stealth address
       for (const alias of userData.aliases) {
@@ -544,7 +544,7 @@ export const userRoutes = (app, _, done) => {
             const nativeBalancePromises = stealthAddress.nativeTokens.map(
               async (chainId) => {
                 const network = CHAINS.find((chain) => chain.id === chainId);
-                if (!network) return;
+                if (!network) return null;
 
                 const provider = new JsonRpcProvider(network.rpcUrl);
                 const balance = await provider.getBalance(

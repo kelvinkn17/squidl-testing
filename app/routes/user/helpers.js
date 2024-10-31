@@ -10,6 +10,15 @@ export function aggregateBalances(data) {
     erc20: {},
   };
 
+  // Remove the data[i].nativeBalances empty  and data[i].erc20Balances empty
+  data = data.filter((wallet) => wallet.nativeBalances.length > 0 || wallet.erc20Balances.length > 0);
+
+  // Remove any data[i].nativeBalances[i] === undefined or data[i].erc20Balances[i] === undefined
+  data.forEach((wallet) => {
+    wallet.nativeBalances = wallet.nativeBalances.filter((native) => native !== undefined);
+    wallet.erc20Balances = wallet.erc20Balances.filter((erc20) => erc20 !== undefined);
+  });
+
   data.forEach((wallet) => {
     // Process native token balances
     wallet.nativeBalances.forEach((native) => {
@@ -49,7 +58,7 @@ export function aggregateBalances(data) {
         token: { name, symbol, decimals, priceUSD, logo },
         chainName,
         chainLogo,
-        balanceUSD, 
+        balanceUSD,
       } = erc20;
       const key = `${chainId}_${address}`;
 
@@ -68,7 +77,7 @@ export function aggregateBalances(data) {
             symbol,
             priceUSD,
           },
-          priceUSD: balanceUSD, 
+          priceUSD: balanceUSD,
         };
       }
 
@@ -164,6 +173,8 @@ export async function getAliasTotalBalanceUSD(alias, username) {
     for (const erc20Token of stealthAddress.erc20Tokens) {
       const { chainId, address } = erc20Token;
       const network = CHAINS.find((chain) => chain.id === chainId);
+      if(!network) continue;
+
       const provider = new JsonRpcProvider(network.rpcUrl);
       const contract = new Contract(address, erc20Abi, provider);
       const balance = await contract.balanceOf(stealthAddress.address);
