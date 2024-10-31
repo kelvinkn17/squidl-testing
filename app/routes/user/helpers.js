@@ -46,16 +46,10 @@ export function aggregateBalances(data) {
         chainId,
         address,
         balance,
-        token: {
-          name,
-          symbol,
-          decimals,
-          priceUSD,
-          logo
-        },
+        token: { name, symbol, decimals, priceUSD, logo },
         chainName,
         chainLogo,
-        balanceUSD
+        balanceUSD, 
       } = erc20;
       const key = `${chainId}_${address}`;
 
@@ -72,14 +66,13 @@ export function aggregateBalances(data) {
             logo,
             name,
             symbol,
-            priceUSD
+            priceUSD,
           },
-          priceUSD: balanceUSD
+          priceUSD: balanceUSD, 
         };
       }
 
       aggregatedBalances.erc20[key].balance += balance;
-      aggregatedBalances.erc20[key].priceUSD += priceUSD;
     });
   });
 
@@ -87,12 +80,8 @@ export function aggregateBalances(data) {
   const erc20Result = Object.values(aggregatedBalances.erc20);
 
   const totalBalanceUSD =
-    nativeResult.reduce((acc, { priceUSD }) => {
-      return acc + priceUSD;
-    }, 0) +
-    erc20Result.reduce((acc, { priceUSD }) => {
-      return acc + priceUSD;
-    }, 0);
+    nativeResult.reduce((acc, { priceUSD }) => acc + priceUSD, 0) +
+    erc20Result.reduce((acc, { priceUSD }) => acc + priceUSD, 0);
 
   // Sort nativeResult and erc20Result by priceUSD  
   nativeResult.sort((a, b) => b.priceUSD - a.priceUSD);
@@ -178,14 +167,22 @@ export async function getAliasTotalBalanceUSD(alias, username) {
       const provider = new JsonRpcProvider(network.rpcUrl);
       const contract = new Contract(address, erc20Abi, provider);
       const balance = await contract.balanceOf(stealthAddress.address);
-      const formattedBalance = parseFloat(ethers.formatUnits(balance, 18));
 
       const tokenMetadata = await getTokenMetadata({
         tokenAddress: address,
         chainId,
       });
 
-      totalBalanceUSD += (tokenMetadata.priceUSD || 0) * formattedBalance;
+      const formattedBalance = parseFloat(
+        ethers.formatUnits(balance, tokenMetadata.decimals)
+      );
+
+      const tokenPrice = await prismaClient.token.findFirst({
+        where: { address },
+        select: { stats: { select: { priceUSD: true } } },
+      });
+
+      totalBalanceUSD += (tokenPrice.stats.priceUSD || 0) * formattedBalance;
     }
   }
 
