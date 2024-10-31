@@ -183,6 +183,101 @@ export const userRoutes = (app, _, done) => {
     }
   );
 
+  app.get("/wallet-assets/:username/charts", async (req, reply) => {
+    const { username } = req.params;
+    const { isTestnet = "true" } = req.query;
+
+    try {
+      // const transactions = await prismaClient.transaction.findMany({
+      //   where: {
+      //     stealthAddress: {
+      //       alias: {
+      //         user: {
+      //           username: username,
+      //         },
+      //       },
+      //     },
+      //   },
+      //   select: {
+      //     chainId: true,
+      //     chain: {
+      //       select: {
+      //         id: true,
+      //         name: true,
+      //         blockExplorerUrl: true,
+      //         isTestnet: true,
+      //         imageUrl: true,
+      //         nativeToken: {
+      //           select: {
+      //             name: true,
+      //             symbol: true,
+      //             logo: true,
+      //             priceUSD: true,
+      //           },
+      //         },
+      //       },
+      //     },
+      //     fromAddress: true,
+      //     toAddress: true,
+      //     isNative: true,
+      //     token: {
+      //       select: {
+      //         address: true,
+      //         name: true,
+      //         symbol: true,
+      //         logo: true,
+      //         decimals: true,
+      //         stats: {
+      //           select: {
+      //             priceUSD: true,
+      //           },
+      //         },
+      //       },
+      //     },
+      //     value: true,
+      //     amount: true,
+      //     txHash: true,
+      //     stealthAddress: {
+      //       select: {
+      //         address: true,
+      //         alias: {
+      //           select: {
+      //             alias: true,
+      //           },
+      //         },
+      //       },
+      //     },
+      //     createdAt: true,
+      //   },
+      //   orderBy: {
+      //     createdAt: "desc",
+      //   },
+      // });
+
+      const chartData = [
+        { date: "2024-01-05", balance: 12.34 },
+        { date: "2024-02-10", balance: 24.58 },
+        { date: "2024-03-15", balance: 18.22 },
+        { date: "2024-04-20", balance: 32.75 },
+        { date: "2024-05-25", balance: 45.92 },
+        { date: "2024-06-30", balance: 58.3 },
+        { date: "2024-07-05", balance: 74.85 },
+        { date: "2024-08-10", balance: 89.43 },
+        { date: "2024-09-15", balance: 101.56 },
+        { date: "2024-10-20", balance: 113.78 },
+        { date: "2024-11-25", balance: 127.45 },
+        { date: "2024-12-30", balance: 149.67 },
+      ];
+
+      return reply.send(chartData);
+    } catch (error) {
+      console.log("Error getting wallet transactions", error);
+      return reply.code(500).send({
+        message: "Error getting wallet transactions",
+      });
+    }
+  });
+
   // TODO Optimize grouping, db saving, querying, etc.
   app.get(
     "/wallet-assets",
@@ -815,8 +910,8 @@ export const userRoutes = (app, _, done) => {
         stealthAddressWithAssets
       );
 
-      // Order aggregated balances by the balanceUSD  
-      console.log('aggregatedBalances', aggregatedBalances);
+      // Order aggregated balances by the balanceUSD
+      console.log("aggregatedBalances", aggregatedBalances);
 
       return reply.send({
         aggregatedBalances,
