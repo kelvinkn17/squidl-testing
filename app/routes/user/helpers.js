@@ -94,6 +94,10 @@ export function aggregateBalances(data) {
       return acc + priceUSD;
     }, 0);
 
+  // Sort nativeResult and erc20Result by priceUSD  
+  nativeResult.sort((a, b) => b.priceUSD - a.priceUSD);
+  erc20Result.sort((a, b) => b.priceUSD - a.priceUSD);
+
   return {
     aggregatedBalances: {
       native: nativeResult,

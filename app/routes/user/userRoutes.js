@@ -530,8 +530,6 @@ export const userRoutes = (app, _, done) => {
               }
             );
 
-            console.log('stealthAddress', stealthAddress);
-
             return {
               ...stealthAddress,
               nativeTokens: [...nativeTokens],
@@ -576,8 +574,6 @@ export const userRoutes = (app, _, done) => {
                 };
               }
             );
-
-            console.log('stealthAddress.erc20Tokens', stealthAddress.erc20Tokens);
 
             const erc20BalancePromises = stealthAddress.erc20Tokens.map(
               async ({ chainId, address, decimals }) => {
@@ -817,6 +813,9 @@ export const userRoutes = (app, _, done) => {
       const { aggregatedBalances, totalBalanceUSD } = aggregateBalances(
         stealthAddressWithAssets
       );
+
+      // Order aggregated balances by the balanceUSD  
+      console.log('aggregatedBalances', aggregatedBalances);
 
       return reply.send({
         aggregatedBalances,
