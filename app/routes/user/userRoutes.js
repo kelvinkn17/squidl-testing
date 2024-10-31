@@ -532,6 +532,7 @@ export const userRoutes = (app, _, done) => {
 
             return {
               ...stealthAddress,
+              key: alias.key,
               nativeTokens: [...nativeTokens],
               erc20Tokens: [...erc20Tokens.values()],
             };
