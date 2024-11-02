@@ -55,13 +55,13 @@ fastify.register(userRoutes, {
 
 fastify.register(stealthSignerRoutes, {
   prefix: "/stealth-signer",
-})
+});
 
 /* --------------------------------- Workers -------------------------------- */
 if (process.env.WORKERS === "true") {
   // fastify.register(priceWorker);
-  fastify.register(tokenPriceWorker);
-  fastify.register(transactionWorker);
+  // fastify.register(tokenPriceWorker);
+  // fastify.register(transactionWorker);
 }
 
 const start = async () => {

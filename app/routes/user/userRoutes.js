@@ -982,13 +982,23 @@ export const userRoutes = (app, _, done) => {
 
   app.get("/wallet-assets/:username/charts-new", async (req, reply) => {
     const { username } = req.params;
-    const { isTestnet = "false", days = "30" } = req.query;
+    const { isTestnet = "false" } = req.query;
 
     const user = await prismaClient.user.findFirst({
       where: {
         username,
       },
       include: {
+        aliases: {
+          include: {
+            stealthAddresses: {
+              select: {
+                address: true,
+              },
+              take: 30,
+            },
+          },
+        },
         wallet: true,
       },
     });
@@ -1005,9 +1015,9 @@ export const userRoutes = (app, _, done) => {
     const usdcAddress =
       isTestnet === "true" ? USDC_ADDRESSES.testnet : USDC_ADDRESSES.mainnet;
 
-    async function getErc20TxHistory() {
+    async function getErc20TxHistory(address) {
       const { data: erc20TransferHistory } = await moralisApi.get(
-        `/${userAddress}/erc20/transfers`,
+        `/${address}/erc20/transfers`,
         {
           params: {
             chain: chainId,
@@ -1066,20 +1076,24 @@ export const userRoutes = (app, _, done) => {
     };
 
     try {
-      // Get token erc20 transfers
+      const stealthAddresses = user.aliases
+        .flatMap((alias) => alias.stealthAddresses)
+        .map((sa) => sa.address);
 
-      const [transferHistory, currentBalanceData, priceData] =
-        await Promise.all([
-          getErc20TxHistory(),
-          getErc20TokenBalance(),
-          isTestnet ? [mockUsdcPrice] : getTokenPrice(),
-        ]);
+      const stealthAddressSet = new Set(
+        stealthAddresses.map((sa) => sa.toLowerCase())
+      );
 
-      console.log({
-        transferHistory,
-        currentBalanceData,
-        priceData,
-      });
+      const allTransferHistories = await Promise.all(
+        stealthAddresses.map((address) => getErc20TxHistory(address))
+      );
+
+      const transferHistory = allTransferHistories.flat();
+
+      const [currentBalanceData, priceData] = await Promise.all([
+        getErc20TokenBalance(),
+        isTestnet ? [mockUsdcPrice] : getTokenPrice(),
+      ]);
 
       const currentPriceUSD = priceData[0].usdPrice;
 
@@ -1089,14 +1103,12 @@ export const userRoutes = (app, _, done) => {
       );
 
       // Find the first incoming transaction to set the genesis balance
-      let genesisTransaction = transferHistory.find(
-        (tx) => tx.to_address.toLowerCase() === userAddress.toLowerCase()
+      const genesisTransaction = transferHistory.find((tx) =>
+        stealthAddressSet.has(tx.to_address?.toLowerCase())
       );
 
       if (!genesisTransaction) {
-        throw new Error(
-          "No incoming transactions found to set genesis balance."
-        );
+        return reply.send([]);
       }
 
       // Set the genesis balance based on the first incoming transfer
