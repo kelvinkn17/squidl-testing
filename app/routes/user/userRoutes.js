@@ -187,101 +187,6 @@ export const userRoutes = (app, _, done) => {
     }
   );
 
-  app.get("/wallet-assets/:username/charts", async (req, reply) => {
-    const { username } = req.params;
-    const { isTestnet = "true" } = req.query;
-
-    try {
-      // const transactions = await prismaClient.transaction.findMany({
-      //   where: {
-      //     stealthAddress: {
-      //       alias: {
-      //         user: {
-      //           username: username,
-      //         },
-      //       },
-      //     },
-      //   },
-      //   select: {
-      //     chainId: true,
-      //     chain: {
-      //       select: {
-      //         id: true,
-      //         name: true,
-      //         blockExplorerUrl: true,
-      //         isTestnet: true,
-      //         imageUrl: true,
-      //         nativeToken: {
-      //           select: {
-      //             name: true,
-      //             symbol: true,
-      //             logo: true,
-      //             priceUSD: true,
-      //           },
-      //         },
-      //       },
-      //     },
-      //     fromAddress: true,
-      //     toAddress: true,
-      //     isNative: true,
-      //     token: {
-      //       select: {
-      //         address: true,
-      //         name: true,
-      //         symbol: true,
-      //         logo: true,
-      //         decimals: true,
-      //         stats: {
-      //           select: {
-      //             priceUSD: true,
-      //           },
-      //         },
-      //       },
-      //     },
-      //     value: true,
-      //     amount: true,
-      //     txHash: true,
-      //     stealthAddress: {
-      //       select: {
-      //         address: true,
-      //         alias: {
-      //           select: {
-      //             alias: true,
-      //           },
-      //         },
-      //       },
-      //     },
-      //     createdAt: true,
-      //   },
-      //   orderBy: {
-      //     createdAt: "desc",
-      //   },
-      // });
-
-      const chartData = [
-        { date: "2024-01-05", balance: 12.34 },
-        { date: "2024-02-10", balance: 24.58 },
-        { date: "2024-03-15", balance: 18.22 },
-        { date: "2024-04-20", balance: 32.75 },
-        { date: "2024-05-25", balance: 45.92 },
-        { date: "2024-06-30", balance: 58.3 },
-        { date: "2024-07-05", balance: 74.85 },
-        { date: "2024-08-10", balance: 89.43 },
-        { date: "2024-09-15", balance: 101.56 },
-        { date: "2024-10-20", balance: 113.78 },
-        { date: "2024-11-25", balance: 127.45 },
-        { date: "2024-12-30", balance: 149.67 },
-      ];
-
-      return reply.send(chartData);
-    } catch (error) {
-      console.log("Error getting wallet transactions", error);
-      return reply.code(500).send({
-        message: "Error getting wallet transactions",
-      });
-    }
-  });
-
   // TODO Optimize grouping, db saving, querying, etc.
   app.get(
     "/wallet-assets",
@@ -429,104 +334,6 @@ export const userRoutes = (app, _, done) => {
       }
     }
   );
-
-  // TODO use real stealth addresses from user
-  // app.get(
-  //   "/wallet-assets/:aliasId",
-  //   // { preHandler: [authMiddleware] },
-  //   async function (req, reply) {
-  //     const { aliasId } = req.params;
-  //     const { id } = req.user;
-
-  //     if (!id) {
-  //       return reply.status(400).send({
-  //         message: "User id is required",
-  //       });
-  //     }
-
-  //     try {
-  //       const user = await prismaClient.user.findUnique({
-  //         where: {
-  //           id: id,
-  //         },
-  //       });
-
-  //       if (!user) {
-  //         return reply.status(404).send({
-  //           message: "User not found",
-  //         });
-  //       }
-
-  //       const alias = await prismaClient.userAlias.findUnique({
-  //         where: { id: aliasId },
-  //         include: {
-  //           stealthAddresses: true,
-  //         },
-  //       });
-
-  //       // TODO use real stealth addresses from user
-  //       // const stealthAddresses = alias.stealthAddresses;
-
-  //       // TODO replace with real assets
-
-  //       const dummyTokens = [
-  //         {
-  //           address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-  //           name: "USD Coin",
-  //           symbol: "USDC",
-  //           amount: 1,
-  //           decimals: 6,
-  //           logo: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
-  //         },
-  //       ];
-
-  //       // Fetch token price
-  //       const tokensWithStats = await prismaClient.token.findMany({
-  //         where: {
-  //           address: { in: dummyTokens.map((token) => token.address) },
-  //         },
-  //         include: {
-  //           stats: true,
-  //         },
-  //       });
-
-  //       // Map tokens to include prices and prepare the response
-  //       // TODO replace with real assets
-  //       const tokenAssets = dummyTokens.map((dummyToken) => {
-  //         const tokenWithStat = tokensWithStats.find(
-  //           (t) => t.address === dummyToken.address
-  //         );
-
-  //         const priceUSD = tokenWithStat?.stats?.priceUSD || 1;
-
-  //         // TODO add chain logo
-  //         return {
-  //           address: dummyToken.address,
-  //           name: dummyToken.name,
-  //           symbol: dummyToken.symbol,
-  //           amount: dummyToken.amount,
-  //           logo: dummyToken.logo,
-  //           priceUSD,
-  //           amountUSD: dummyToken.amount * priceUSD,
-  //         };
-  //       });
-
-  //       const result = {
-  //         tokenAssets,
-  //       };
-
-  //       return reply.send({
-  //         message: "Success getting user wallet assets",
-  //         data: result,
-  //       });
-  //     } catch (e) {
-  //       console.log("Error getting wallet assets", e);
-  //       return reply.status(500).send({
-  //         message: "Error getting wallet assets",
-  //       });
-  //     }
-  //   }
-  // );
 
   app.get(
     "/wallet-assets/:username/total-balance",
@@ -1170,6 +977,179 @@ export const userRoutes = (app, _, done) => {
       }
     }
   );
+
+  // CHARTS DATA ENDPOINT FOR USER BALANCE HISTORY USE MORALIS API
+
+  app.get("/wallet-assets/:username/charts-new", async (req, reply) => {
+    const { username } = req.params;
+    const { isTestnet = "false", days = "30" } = req.query;
+
+    const user = await prismaClient.user.findFirst({
+      where: {
+        username,
+      },
+      include: {
+        wallet: true,
+      },
+    });
+
+    const userAddress = user.wallet.address;
+
+    // USDC contract addresses
+    const USDC_ADDRESSES = {
+      mainnet: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      testnet: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // Sepolia USDC
+    };
+
+    const chainId = isTestnet === "true" ? "sepolia" : "0x1"; // 0xaa36a7 for Sepolia, 0x1 for Ethereum mainnet
+    const usdcAddress =
+      isTestnet === "true" ? USDC_ADDRESSES.testnet : USDC_ADDRESSES.mainnet;
+
+    async function getErc20TxHistory() {
+      const { data: erc20TransferHistory } = await moralisApi.get(
+        `/${userAddress}/erc20/transfers`,
+        {
+          params: {
+            chain: chainId,
+            contract_addresses: [usdcAddress],
+            order: "ASC",
+          },
+        }
+      );
+      return erc20TransferHistory ? erc20TransferHistory.result : [];
+    }
+
+    async function getErc20TokenBalance() {
+      const { data: erc20TokenBalances } = await moralisApi.get(
+        `/${userAddress}/erc20`,
+        {
+          params: {
+            chain: chainId,
+            token_addresses: [usdcAddress],
+          },
+        }
+      );
+
+      return erc20TokenBalances;
+    }
+
+    async function getTokenPrice() {
+      const { data: tokenPrice } = await moralisApi.get(
+        `/erc20/${usdcAddress}/price`,
+        {
+          params: {
+            chain: chainId,
+          },
+        }
+      );
+
+      return tokenPrice;
+    }
+
+    const mockUsdcPrice = {
+      tokenName: "USD Coin",
+      tokenSymbol: "USDC",
+      tokenLogo:
+        "https://cdn.moralis.io/eth/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.png",
+      tokenDecimals: "6",
+      usdPrice: 1.0,
+      usdPriceFormatted: "1.00",
+      "24hrPercentChange": "0.00",
+      exchangeAddress: "0x1f98431c8ad98523631ae4a59f267346ea31f984",
+      exchangeName: "Uniswap v3",
+      tokenAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      toBlock: "16314545",
+      possibleSpam: "false",
+      verifiedContract: true,
+      pairAddress: "0x1f98431c8ad98523631ae4a59f267346ea31f984",
+      pairTotalLiquidityUsd: "500000000",
+    };
+
+    try {
+      // Get token erc20 transfers
+
+      const [transferHistory, currentBalanceData, priceData] =
+        await Promise.all([
+          getErc20TxHistory(),
+          getErc20TokenBalance(),
+          isTestnet ? [mockUsdcPrice] : getTokenPrice(),
+        ]);
+
+      console.log({
+        transferHistory,
+        currentBalanceData,
+        priceData,
+      });
+
+      const currentPriceUSD = priceData[0].usdPrice;
+
+      // Ensure transfer history is sorted by time (ascending) if not already
+      transferHistory.sort(
+        (a, b) => new Date(a.block_timestamp) - new Date(b.block_timestamp)
+      );
+
+      // Find the first incoming transaction to set the genesis balance
+      let genesisTransaction = transferHistory.find(
+        (tx) => tx.to_address.toLowerCase() === userAddress.toLowerCase()
+      );
+
+      if (!genesisTransaction) {
+        throw new Error(
+          "No incoming transactions found to set genesis balance."
+        );
+      }
+
+      // Set the genesis balance based on the first incoming transfer
+      const decimals = parseInt(currentBalanceData[0]?.decimals || 6);
+      const decimalFactor = Math.pow(10, decimals);
+      let runningBalance = parseFloat(genesisTransaction.value) / decimalFactor;
+
+      // Array to store historical balances
+      const balanceHistory = [
+        {
+          timestamp: new Date(genesisTransaction.block_timestamp).getTime(),
+          date: new Date(genesisTransaction.block_timestamp).toISOString(),
+          balance: parseFloat(runningBalance.toFixed(6)),
+          balanceUSD: parseFloat((runningBalance * currentPriceUSD).toFixed(2)),
+        },
+      ];
+
+      // Process the remaining transactions after the genesis transaction
+      transferHistory.forEach((tx) => {
+        const txDate = new Date(tx.block_timestamp);
+        const value = parseFloat(tx.value) / decimalFactor;
+
+        // Skip the genesis transaction (already recorded)
+        if (tx === genesisTransaction) return;
+
+        // Adjust balance based on transaction direction
+        if (tx.to_address.toLowerCase() === userAddress.toLowerCase()) {
+          runningBalance += value; // Incoming transaction
+        } else if (
+          tx.from_address.toLowerCase() === userAddress.toLowerCase()
+        ) {
+          runningBalance -= value; // Outgoing transaction
+        }
+
+        balanceHistory.push({
+          timestamp: txDate.getTime(),
+          date: txDate.toISOString(),
+          balance: parseFloat(runningBalance.toFixed(6)),
+          balanceUSD: parseFloat((runningBalance * currentPriceUSD).toFixed(2)),
+        });
+      });
+
+      // Send the response
+      return reply.send(balanceHistory);
+    } catch (error) {
+      console.error("Error getting USDC balance history:", error);
+      return reply.code(500).send({
+        success: false,
+        message: "Error getting USDC balance history",
+        error: error.message,
+      });
+    }
+  });
 
   done();
 };
