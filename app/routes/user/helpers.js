@@ -207,20 +207,22 @@ export async function getAliasTotalBalanceUSD(alias, username) {
   return totalBalanceUSD;
 }
 
-export function getAliasesList({ stealthAddresses = [], aliasesList }) {
+export function getAliasesList({ stealthAddresses = [], aliasesList = [] }) {
   const aliasBalances = {};
 
   // if aliases list stealth address is empty add the alias to the alias balance with default values
-  aliasesList.forEach((alias) => {
-    if (!alias.stealthAddresses || alias.stealthAddresses.length === 0) {
-      aliasBalances[alias.id] = {
-        id: alias.id,
-        alias: alias.alias,
-        balanceUSD: 0,
-        createdAt: alias.createdAt,
-      };
-    }
-  });
+  if (aliasesList.length > 0) {
+    aliasesList.forEach((alias) => {
+      if (!alias.stealthAddresses || alias.stealthAddresses.length === 0) {
+        aliasBalances[alias.id] = {
+          id: alias.id,
+          alias: alias.alias,
+          balanceUSD: 0,
+          createdAt: alias.createdAt,
+        };
+      }
+    });
+  }
 
   stealthAddresses.forEach((addressData) => {
     // Calculate the total balance in USD by summing native and ERC20 balances
