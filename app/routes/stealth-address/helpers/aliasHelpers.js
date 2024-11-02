@@ -1,10 +1,14 @@
 import { prismaClient } from "../../../lib/db/prisma.js";
 
 export const getNextAliasKey = async () => {
-  const allUserAliasCount = await prismaClient.userAlias.count({
-    where: {},
+  const allUserAliasCount = await prismaClient.userAlias.findMany({
+    orderBy: {
+      key: "desc",
+    },
   });
-  const nextAliasKey = allUserAliasCount + 1;
+
+  const lastAliasKey = allUserAliasCount[0].key;
+  const nextAliasKey = lastAliasKey + 1;
 
   return nextAliasKey;
 };
