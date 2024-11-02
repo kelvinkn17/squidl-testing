@@ -8,7 +8,11 @@ import { ALLOWED_CHAIN_IDS, CHAINS } from "../../config.js";
 import { verifyFields } from "../../utils/request.js";
 import { Contract, ethers, JsonRpcProvider } from "ethers";
 import { getTokenMetadata } from "../../utils/tokenUtils.js";
-import { aggregateBalances, getAliasesList, getAliasTotalBalanceUSD } from "./helpers.js";
+import {
+  aggregateBalances,
+  getAliasesList,
+  getAliasTotalBalanceUSD,
+} from "./helpers.js";
 
 /**
  *
@@ -333,16 +337,16 @@ export const userRoutes = (app, _, done) => {
             data.protocol_name === "native" || data.protocol_name === "token"
         )
           ? portfolioData.result
-            .filter(
-              (data) =>
-                data.protocol_name === "native" ||
-                data.protocol_name === "token"
-            )
-            .flatMap((data) => data.result)
-            .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
-            .reduce((acc, curr) => {
-              return acc + parseFloat(curr.value_usd);
-            }, 0)
+              .filter(
+                (data) =>
+                  data.protocol_name === "native" ||
+                  data.protocol_name === "token"
+              )
+              .flatMap((data) => data.result)
+              .filter((data) => ALLOWED_CHAIN_IDS.includes(data.chain_id))
+              .reduce((acc, curr) => {
+                return acc + parseFloat(curr.value_usd);
+              }, 0)
           : 0;
 
         const tokens = [];
@@ -580,9 +584,6 @@ export const userRoutes = (app, _, done) => {
           aliases: {
             include: {
               stealthAddresses: {
-                where: {
-                  isTransacted: true
-                },
                 select: {
                   address: true,
                   ephemeralPub: true,
@@ -593,7 +594,7 @@ export const userRoutes = (app, _, done) => {
                       id: true,
                       alias: true,
                       createdAt: true,
-                    }
+                    },
                   },
                   transactions: {
                     select: {
@@ -606,6 +607,9 @@ export const userRoutes = (app, _, done) => {
                 take: 50,
               },
             },
+            orderBy: {
+              createdAt: "desc",
+            },
           },
         },
       });
@@ -615,7 +619,6 @@ export const userRoutes = (app, _, done) => {
       }
 
       let allStealthAddresses = [];
-
       // Loop over each alias and process balances for each stealth address
       for (const alias of userData.aliases) {
         const stealthAddresses = alias.stealthAddresses.map(
@@ -648,6 +651,7 @@ export const userRoutes = (app, _, done) => {
         // Fetch balances in parallel for all stealth addresses in this alias
         await Promise.all(
           stealthAddresses.map(async (stealthAddress) => {
+            // GET NATIVE BALANCES
             const nativeBalancePromises = stealthAddress.nativeTokens.map(
               async (chainId) => {
                 const network = CHAINS.find((chain) => chain.id === chainId);
@@ -682,6 +686,7 @@ export const userRoutes = (app, _, done) => {
               }
             );
 
+            // GET ERC 20 BALANCES
             const erc20BalancePromises = stealthAddress.erc20Tokens.map(
               async ({ chainId, address, decimals }) => {
                 const network = CHAINS.find((chain) => chain.id === chainId);
@@ -746,8 +751,9 @@ export const userRoutes = (app, _, done) => {
         aggregateBalances(allStealthAddresses);
 
       const aliasesList = getAliasesList({
-        stealthAddresses: allStealthAddresses
-      })
+        stealthAddresses: allStealthAddresses,
+        aliasesList: userData.aliases,
+      });
 
       return reply.send({
         aliasesList,
@@ -787,7 +793,7 @@ export const userRoutes = (app, _, done) => {
                   id: true,
                   alias: true,
                   createdAt: true,
-                }
+                },
               },
               transactions: {
                 select: {
@@ -938,8 +944,8 @@ export const userRoutes = (app, _, done) => {
       console.log("aggregatedBalances", aggregatedBalances);
 
       const aliasesList = getAliasesList({
-        stealthAddresses: stealthAddressWithAssets
-      })
+        stealthAddresses: stealthAddressWithAssets,
+      });
 
       return reply.send({
         aliasesList,

@@ -11,12 +11,19 @@ export function aggregateBalances(data) {
   };
 
   // Remove the data[i].nativeBalances empty  and data[i].erc20Balances empty
-  data = data.filter((wallet) => wallet.nativeBalances.length > 0 || wallet.erc20Balances.length > 0);
+  data = data.filter(
+    (wallet) =>
+      wallet.nativeBalances.length > 0 || wallet.erc20Balances.length > 0
+  );
 
   // Remove any data[i].nativeBalances[i] === undefined or data[i].erc20Balances[i] === undefined
   data.forEach((wallet) => {
-    wallet.nativeBalances = wallet.nativeBalances.filter((native) => native !== undefined);
-    wallet.erc20Balances = wallet.erc20Balances.filter((erc20) => erc20 !== undefined);
+    wallet.nativeBalances = wallet.nativeBalances.filter(
+      (native) => native !== undefined
+    );
+    wallet.erc20Balances = wallet.erc20Balances.filter(
+      (erc20) => erc20 !== undefined
+    );
   });
 
   data.forEach((wallet) => {
@@ -92,7 +99,7 @@ export function aggregateBalances(data) {
     nativeResult.reduce((acc, { priceUSD }) => acc + priceUSD, 0) +
     erc20Result.reduce((acc, { priceUSD }) => acc + priceUSD, 0);
 
-  // Sort nativeResult and erc20Result by priceUSD  
+  // Sort nativeResult and erc20Result by priceUSD
   nativeResult.sort((a, b) => b.priceUSD - a.priceUSD);
   erc20Result.sort((a, b) => b.priceUSD - a.priceUSD);
 
@@ -200,25 +207,46 @@ export async function getAliasTotalBalanceUSD(alias, username) {
   return totalBalanceUSD;
 }
 
-export function getAliasesList({ stealthAddresses = [] }) {
+export function getAliasesList({ stealthAddresses = [], aliasesList }) {
   const aliasBalances = {};
+
+  // if aliases list stealth address is empty add the alias to the alias balance with default values
+  aliasesList.forEach((alias) => {
+    if (!alias.stealthAddresses || alias.stealthAddresses.length === 0) {
+      aliasBalances[alias.id] = {
+        id: alias.id,
+        alias: alias.alias,
+        balanceUSD: 0,
+        createdAt: alias.createdAt,
+      };
+    }
+  });
 
   stealthAddresses.forEach((addressData) => {
     // Calculate the total balance in USD by summing native and ERC20 balances
     const totalBalanceUSD = [
       ...(addressData.nativeBalances || []),
-      ...(addressData.erc20Balances || [])
-    ].reduce((total, balance) => total + (balance.priceUSD || balance.balanceUSD || 0), 0);
+      ...(addressData.erc20Balances || []),
+    ].reduce(
+      (total, balance) => total + (balance.priceUSD || balance.balanceUSD || 0),
+      0
+    );
 
     const { id, alias, createdAt } = addressData.alias;
 
     if (aliasBalances[id]) {
       // If the id already exists, add the balance and keep the earliest createdAt date
       aliasBalances[id].balanceUSD += totalBalanceUSD;
-      aliasBalances[id].createdAt = new Date(Math.min(new Date(aliasBalances[id].createdAt), new Date(createdAt))).toISOString();
+      aliasBalances[id].createdAt = new Date(
+        Math.min(new Date(aliasBalances[id].createdAt), new Date(createdAt))
+      ).toISOString();
     } else {
-      // Otherwise, create a new entry
-      aliasBalances[id] = { id, alias: alias || "", balanceUSD: totalBalanceUSD, createdAt };
+      aliasBalances[id] = {
+        id,
+        alias: alias || "",
+        balanceUSD: totalBalanceUSD,
+        createdAt,
+      };
     }
   });
 
@@ -226,7 +254,7 @@ export function getAliasesList({ stealthAddresses = [] }) {
   return Object.values(aliasBalances)
     .map((item) => ({
       ...item,
-      balanceUSD: item.balanceUSD.toFixed(2) // Format to 2 decimal places
+      balanceUSD: item.balanceUSD.toFixed(2), // Format to 2 decimal places
     }))
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 }
