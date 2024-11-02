@@ -120,9 +120,8 @@ export const stealthAddressRoutes = (app, _, done) => {
       });
 
       // ENS name, e.g. john.doe.squidl.eth -> john.doe, john.squidl.eth -> john. The aliasName not always there
-      const ensName = `${aliasName}${
-        aliasName ? "." : ""
-      }${username}.squidl.eth`;
+      const ensName = `${aliasName}${aliasName ? "." : ""
+        }${username}.squidl.eth`;
       console.log({ ensName });
 
       // Insert
@@ -171,11 +170,11 @@ export const stealthAddressRoutes = (app, _, done) => {
       // Check if the alias is available
       try {
         const { alias } = req.query;
-        const userAlias = await prismaClient.userAlias.findFirst({
+        const userAlias = await prismaClient.user.findFirst({
           where: {
-            alias: alias,
-          },
-        });
+            username: alias,
+          }
+        })
 
         if (userAlias) {
           return false;
@@ -524,6 +523,32 @@ export const stealthAddressRoutes = (app, _, done) => {
       };
     }
   });
+
+  app.get('/recent', async (req, res) => {
+    try {
+      const stealthAddresses = await prismaClient.stealthAddress.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          ephemeralPub: true,
+          viewHint: true,
+          isTransacted: true,
+          createdAt: true,
+        },
+        take: 100,
+      });
+
+      return res.send(stealthAddresses);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({
+        error: error.message,
+        data: null,
+        message: "error while fetching recent stealth addresses",
+      });
+    }
+  })
 
   done();
 };
