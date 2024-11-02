@@ -55,7 +55,7 @@ fastify.register(userRoutes, {
 
 fastify.register(stealthSignerRoutes, {
   prefix: "/stealth-signer",
-})
+});
 
 /* --------------------------------- Workers -------------------------------- */
 if (process.env.WORKERS === "true") {
