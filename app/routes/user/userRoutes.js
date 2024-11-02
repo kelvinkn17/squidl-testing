@@ -992,10 +992,16 @@ export const userRoutes = (app, _, done) => {
         aliases: {
           include: {
             stealthAddresses: {
+              where: {
+                isTransacted: true,
+              },
               select: {
                 address: true,
               },
-              take: 30,
+              take: 50,
+              orderBy: {
+                createdAt: "desc",
+              },
             },
           },
         },
@@ -1026,6 +1032,9 @@ export const userRoutes = (app, _, done) => {
           },
         }
       );
+
+      await sleep(50);
+
       return erc20TransferHistory ? erc20TransferHistory.result : [];
     }
 
