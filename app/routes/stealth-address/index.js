@@ -171,11 +171,11 @@ export const stealthAddressRoutes = (app, _, done) => {
       // Check if the alias is available
       try {
         const { alias } = req.query;
-        const userAlias = await prismaClient.userAlias.findFirst({
+        const userAlias = await prismaClient.user.findFirst({
           where: {
-            alias: alias,
-          },
-        });
+            username: alias,
+          }
+        })
 
         if (userAlias) {
           return false;
