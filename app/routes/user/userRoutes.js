@@ -755,8 +755,34 @@ export const userRoutes = (app, _, done) => {
         aliasesList: userData.aliases,
       });
 
+      // Get all user aliases
+      const userAliases = await prismaClient.userAlias.findMany({
+        where: {
+          user: {
+            username
+          }
+        },
+        orderBy: {
+          createdAt: 'asc'
+        },
+        select: {
+          id: true,
+          alias: true,
+          createdAt: true
+        }
+      })
+
+      for(let i = 0; i < userAliases.length; i++) {
+        const aliasId = userAliases[i].id;
+        const balanceUSD = aliasesList.find((a) => a.id === aliasId)?.balanceUSD || 0;
+        userAliases[i].balanceUSD = parseFloat(balanceUSD);
+        userAliases[i].index = i + 1;
+      }
+
+      console.log('userAliases', userAliases);
+
       return reply.send({
-        aliasesList,
+        aliasesList: userAliases,
         aggregatedBalances,
         stealthAddresses: allStealthAddresses,
         totalBalanceUSD,
