@@ -1208,7 +1208,7 @@ export const userRoutes = (app, _, done) => {
                       chainId: 1,
                     },
                     orderBy: {
-                      createdAt: "asc",
+                      createdAt: "desc",
                     },
                   },
                 },
@@ -1230,6 +1230,10 @@ export const userRoutes = (app, _, done) => {
 
       const allTransactions = user.aliases.flatMap((alias) =>
         alias.stealthAddresses.flatMap((addr) => addr.transactions)
+      );
+
+      allTransactions.sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
       );
 
       let balance = 0;
@@ -1281,12 +1285,13 @@ export const userRoutes = (app, _, done) => {
         const tokenPrice = tokenInfo.price;
 
         const txDate = new Date(tx.createdAt);
-        const value = parseFloat(
-          ethers.formatUnits(
-            tx.value,
-            tokenInfo.isNative ? "ether" : tokenInfo.decimals
-          )
-        );
+        const value =
+          parseFloat(
+            ethers.formatUnits(
+              tx.value,
+              tokenInfo.isNative ? "ether" : tokenInfo.decimals
+            )
+          ) * tokenPrice;
 
         if (stealthAddressSet.has(tx.toAddress.toLowerCase())) {
           balance += value;
@@ -1296,12 +1301,10 @@ export const userRoutes = (app, _, done) => {
 
         balance = Math.max(0, balance);
 
-        const balanceUsd = balance * tokenPrice;
-
         balanceHistory.push({
           timestamp: txDate.getTime(),
           date: txDate.toISOString(),
-          balance: parseFloat(balanceUsd.toFixed(2)),
+          balance: parseFloat(balance.toFixed(2)),
         });
       }
 
