@@ -54,7 +54,8 @@ export function aggregateBalances(data) {
 
       // Accumulate balance and calculate priceUSD as balance * priceUSD
       aggregatedBalances.native[key].balance += balance;
-      aggregatedBalances.native[key].priceUSD += balance * priceUSD;
+      aggregatedBalances.native[key].priceUSD += priceUSD;
+      aggregatedBalances.native[key].balanceUSD += priceUSD;
     });
 
     // Process ERC20 token balances
@@ -96,6 +97,8 @@ export function aggregateBalances(data) {
 
   const nativeResult = Object.values(aggregatedBalances.native);
   const erc20Result = Object.values(aggregatedBalances.erc20);
+
+  console.log("Native result: ", nativeResult);
 
   const totalBalanceUSD =
     nativeResult.reduce((acc, { priceUSD }) => acc + priceUSD, 0) +
@@ -232,7 +235,7 @@ export function getAliasesList({ stealthAddresses = [], aliasesList = [] }) {
       ...(addressData.nativeBalances || []),
       ...(addressData.erc20Balances || []),
     ].reduce(
-      (total, balance) => total + (balance.priceUSD || balance.balanceUSD || 0),
+      (total, balance) => total + (balance.balanceUSD),
       0
     );
 
@@ -255,10 +258,14 @@ export function getAliasesList({ stealthAddresses = [], aliasesList = [] }) {
   });
 
   // Convert to array, format balanceUSD, and sort by createdAt in ascending order
-  return Object.values(aliasBalances)
+  const aliases = Object.values(aliasBalances)
     .map((item) => ({
       ...item,
       balanceUSD: item.balanceUSD.toFixed(2), // Format to 2 decimal places
     }))
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+  console.log(aliases);
+
+  return aliases;
 }

@@ -489,6 +489,7 @@ export const userRoutes = (app, _, done) => {
                   chainName: network.name,
                   chainLogo: network.imageUrl,
                   priceUSD: nativeToken.priceUSD * formattedBalance,
+                  balanceUSD: nativeToken.priceUSD * formattedBalance,
                   nativeToken,
                 };
               }
