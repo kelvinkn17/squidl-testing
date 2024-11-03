@@ -31,7 +31,7 @@ SQUIDL puts users in control of their payments, enabling private and untraceable
 
 ### 4. Overcoming Limitations of the ERC-5564 Standard 🚀
 - **Simplified Transactions**: Unlike traditional ERC-5564, SQUIDL streamlines the stealth transaction process to make it as simple as a regular transfer—no complex contract interactions or additional steps required.
-- **Enhanced Privacy**: By avoiding on-chain "Announcement" events, SQUIDL prevents any unintended information leakage, ensuring that stealth addresses and transactions stay entirely confidential.
+- **Enhanced Privacy**:  SQUIDL refines the on-chain "Announcement" events by emitting only essential, non-identifiable data, ensuring stealth addresses and transactions remain fully confidential. This approach prevents unintended information leakage, keeping user privacy intact while still maintaining necessary event logging.
 - **Cost Efficiency**: SQUIDL optimizes stealth address generation, lowering gas costs by reducing computational requirements and unnecessary on-chain events.
 - **Secure Key Management**: Leveraging Oasis Sapphire’s confidential environment, SQUIDL manages private keys without exposing them to potentially insecure settings, addressing the private key exposure issues seen with ERC-5564.
 
