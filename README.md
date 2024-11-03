@@ -1,60 +1,81 @@
-<table> <tr> <td align="center"><h2>Important Notice</h2></td> </tr> <tr> <td> <strong>Privacy4Web3 Hackathon Submission</strong><br><br> This project was created for the Oasis Protocol Privacy4Web3 Hackathon (2nd edition). Learn more about the hackathon <a href="https://dorahacks.io/hackathon/p4w3/buidl">here</a>.<br><br> We’re excited to contribute to privacy-focused innovation in Web3. Thank you for your interest! </td> </tr> </table>
-
-![squidl-logo](https://github.com/user-attachments/assets/e1034b67-7c7e-419f-b299-09265244b584)
-
 # SQUIDL - Your Privacy-Focused Payment Platform 🚀
 
-**SQUIDL** is a next-gen payment platform designed for freelancers, businesses, and individuals who value security and anonymity. By leveraging the power of the **Oasis Protocol**, SQUIDL allows you to create **private static payment links** using stealth addresses, ensuring every transaction is **secure, private, and untraceable**.
+![Squidl Logo](https://github.com/user-attachments/assets/e1034b67-7c7e-419f-b299-09265244b584)
+
+**SQUIDL** is a next-gen payment platform for freelancers, businesses, and individuals who prioritize security and anonymity. Built on **Oasis Protocol’s Sapphire** and enhanced with **Runtime Offchain Logic (ROFL)**, SQUIDL empowers private, secure, and untraceable transactions through stealth addresses.
+
+---
+
+## 🚀 Introduction
+
+SQUIDL puts users in control of their payments, enabling private and untraceable transactions across multiple networks. Designed with a privacy-first approach, SQUIDL ensures your financial transactions remain confidential, secured, and seamlessly integrated with blockchain technology.
+
+---
 
 ## 🌟 Key Features
 
-### 1. Privacy-First Payments with Stealth Addresses
+### 1. Unified Payment Links with Stealth Addresses 🛡️
+- **Custom Links with ENS Support**: Create payment links like `john.squidl.me` that generate a unique stealth address for each transaction, or use an ENS address like `john.squidl.eth` for broader compatibility with wallets and dApps.
+- **Flexible Aliases**: Use aliases such as `freelance.john.squidl.me` or `payment.john.squidl.eth` for different payment purposes—all while keeping transactions fully private.
+- **Effortless Payments**: Share a single link or ENS address without worrying about privacy breaches or complex setups, making private transactions simple for both senders and recipients.
 
-- **Customizable Payment Links**: Create personalized links like `john.squidl.me` that generate a unique stealth address each time they're accessed.
-- **Alias Support**: Use aliases like `payment.john.squidl.me` or `freelance.john.squidl.me` for different contexts—all while keeping your transactions private.
-- **Simplicity at its Best**: Distribute a single link or ENS address without worrying about privacy breaches or complex setups.
+### 2. Enhanced Privacy with Oasis Protocol's Sapphire 🔒
+- **Privacy Wrapped Tokens**: Utilize **pethUSDC** and other private assets on Sapphire, ensuring transactions remain untraceable and confidential.
+- **Confidential Key Management**: Oasis Sapphire’s confidential computing environment keeps private keys secure, eliminating the risk of exposure to insecure environments.
+- **Reduced Gas Costs**: SQUIDL’s streamlined stealth transactions minimize unnecessary on-chain events, reducing gas fees while preserving privacy.
 
-### 2. Enhanced Privacy with Oasis Protocol
+### 3. Resilient Backups with ROFL 🛠️
+- **Automated Transaction Monitoring**: **ROFL** workers continuously monitor stealth addresses and trigger events upon transaction detection—no manual intervention required.
+- **Secure Event Logging**: If a transaction is detected, ROFL securely logs metadata to the **StealthSigner Contract**, without revealing stealth or main addresses.
+- **Reliable Backup**: Even if the backend faces issues, ROFL ensures stealth address data remains secure and accessible.
 
-- **Overcoming Traditional Limitations**: We've streamlined the ERC-5564 standard, making stealth transactions as straightforward as regular transfers.
-- **Secure Key Management**: Thanks to Oasis Sapphire's confidential computing, your private keys stay private—no exposure to insecure environments.
-- **Lower Gas Fees**: Optimized stealth address generation reduces computational resources and gas costs.
-- **No Privacy Leaks**: By eliminating unnecessary on-chain events, we ensure your transactions remain confidential and untraceable.
+### 4. Overcoming Limitations of the ERC-5564 Standard 🚀
+- **Simplified Transactions**: Unlike traditional ERC-5564, SQUIDL streamlines the stealth transaction process to make it as simple as a regular transfer—no complex contract interactions or additional steps required.
+- **Enhanced Privacy**: By avoiding on-chain "Announcement" events, SQUIDL prevents any unintended information leakage, ensuring that stealth addresses and transactions stay entirely confidential.
+- **Cost Efficiency**: SQUIDL optimizes stealth address generation, lowering gas costs by reducing computational requirements and unnecessary on-chain events.
+- **Secure Key Management**: Leveraging Oasis Sapphire’s confidential environment, SQUIDL manages private keys without exposing them to potentially insecure settings, addressing the private key exposure issues seen with ERC-5564.
 
-### 3. Seamless ENS Integration
+By integrating ENS, Oasis Sapphire, and ROFL, and by improving upon ERC-5564, SQUIDL provides a cutting-edge platform for secure, cost-effective, and fully private payments.
 
-- **Easy Access with ENS**: Each payment link is also an ENS address, like `john.squidl.eth`, enhancing compatibility with wallets and dApps.
-- **Broad Compatibility**: Leveraging ENS ensures you can interact with the platform using existing blockchain tools.
+---
 
-### 4. Secure Backups with Oasis Sapphire ROFL
+## 🔥 How SQUIDL Utilizes Oasis Protocol
 
-- **Data Integrity and Security**: We integrate with Oasis Sapphire's ROFL to securely back up stealth address data without relying solely on backend storage.
-- **Automatic Activity Detection**: Our system monitors for any activity on your stealth addresses without revealing any addresses or secrets.
-- **Resilient and Reliable**: Even if our backend faces issues, your stealth addresses remain safe and accessible.
+By integrating Oasis Protocol's **Sapphire** for confidential transactions, **ROFL** for secure backups, and **private wrapped tokens** for untraceable payments, SQUIDL sets a new standard in privacy-focused blockchain transactions.
 
-### 5. Private Transfers via Oasis Sapphire
+- **Total Anonymity**: With Sapphire’s confidential TEEs, transactions lack any traceable link to main addresses.
+- **Private Asset Transfers**: Bridge assets to Sapphire, then wrap them as private tokens, ensuring full transaction anonymity.
+- **Data Integrity**: ROFL securely monitors stealth addresses, keeping critical metadata protected without central storage reliance.
 
-- **Complete Privacy**: Utilize our "Private Transfer" feature to bridge assets to Oasis Sapphire and wrap them into private tokens like `pethUSDC`.
-- **Breaking Transaction Links**: By wrapping assets, transactions become opaque, breaking any link between sender and receiver.
+---
 
-### 6. Developer-Friendly Integration
+## 📊 Developer-Friendly Integration with `StealthSdk.sol`
 
-- **`StealthSdk.sol`**: We've developed a smart contract deployable on any EVM-compatible chain supported by Sapphire OPL, allowing users to register without needing Oasis Sapphire's native currency upfront.
-- **Multi-Chain Support**: Starting with Ethereum Mainnet, Binance Smart Chain, Linea, EVM on Flow, and Morph (Testnet), with plans to expand further.
+- **Easy Integration**: Deployable on any EVM-compatible chain, **StealthSdk.sol** makes it simple for developers to bring SQUIDL’s stealth features to their dApps.
+- **Multi-Chain Support**: Compatible with Ethereum, Binance Smart Chain, Flow EVM, and more, promoting broad adoption.
+- **Low Barrier Entry**: Users don’t need Oasis Sapphire’s native currency upfront, making onboarding seamless.
 
-## 🌐 Enhancing the Oasis Protocol Ecosystem
+---
 
-By integrating features like ROFL and supporting private wrapped tokens, SQUIDL doesn't just use the Oasis Protocol—it enhances it!
+## 🌐 Strengthening the Oasis Protocol Ecosystem
 
-- **Boosting Network Activity**: Our platform brings more transactions and liquidity to the Oasis Sapphire network.
-- **Showcasing Security Innovations**: Our privacy-preserving advancements highlight the Oasis Protocol's focus on security and privacy.
+SQUIDL doesn’t just use Oasis Protocol—it contributes to its ecosystem by:
 
-## 🎉 Join the Future of Private Payments
+- **Boosting Activity**: Each transaction and stealth address interaction brings volume and liquidity to the Oasis Sapphire network.
+- **Highlighting Innovations**: SQUIDL’s ROFL and private tokens showcase the security and privacy strengths of Oasis, attracting more developers and users to the platform.
 
-Experience the ease and security of private transactions with SQUIDL and the Oasis Protocol. Keep your finances confidential, your transactions untraceable, and enjoy a seamless payment experience!
+---
 
+## 🎉 Join the Future of Private Payments with SQUIDL
 
-## 📊 Learn More About Our Platform
-Explore more about what we're building, including the technical flow, by visiting:
+SQUIDL offers private, seamless, and secure payment solutions for all. Experience true financial privacy with untraceable transactions on Oasis Protocol and take control of your payments with confidence!
 
-[Sequence Diagram](https://excalidraw.com/#json=FtV1YyZ2JTzPphmrEw1mG,a_D2Fsds3p8W2OJWlRmk6Q)
+---
+
+## 📘 Learn More
+Explore our technical flow and sequence diagram [here](https://excalidraw.com/#json=FtV1YyZ2JTzPphmrEw1mG,a_D2Fsds3p8W2OJWlRmk6Q).
+
+### 🔔 Important Notice
+This project is a submission for the **Privacy4Web3 Hackathon** by Oasis Protocol. Discover more about the hackathon [here](https://dorahacks.io/hackathon/p4w3/buidl). 
+
+Thank you for your interest in privacy-focused innovation!
