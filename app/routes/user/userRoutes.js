@@ -6,7 +6,8 @@ import { moralisApi } from "../../lib/moralis/api.js";
 import { erc20Abi, toHex } from "viem";
 import { ALLOWED_CHAIN_IDS, CHAINS } from "../../config.js";
 import { verifyFields } from "../../utils/request.js";
-import { Contract, ethers, JsonRpcProvider } from "ethers";
+import { Contract, JsonRpcProvider } from "ethers";
+import * as ethers from "ethers";
 import { getTokenMetadata } from "../../utils/tokenUtils.js";
 import {
   aggregateBalances,
@@ -998,7 +999,7 @@ export const userRoutes = (app, _, done) => {
               select: {
                 address: true,
               },
-              take: 50,
+              take: 30,
               orderBy: {
                 createdAt: "desc",
               },
@@ -1017,52 +1018,62 @@ export const userRoutes = (app, _, done) => {
       testnet: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // Sepolia USDC
     };
 
+    const WETH_ADDRESSES = {
+      mainnet: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      testnet: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", // Sepolia WETH
+    };
+
     const chainId = isTestnet === "true" ? "sepolia" : "0x1"; // 0xaa36a7 for Sepolia, 0x1 for Ethereum mainnet
     const usdcAddress =
       isTestnet === "true" ? USDC_ADDRESSES.testnet : USDC_ADDRESSES.mainnet;
+    const wethAddress =
+      isTestnet === "true" ? WETH_ADDRESSES.testnet : WETH_ADDRESSES.mainnet;
 
-    async function getErc20TxHistory(address) {
-      const { data: erc20TransferHistory } = await moralisApi.get(
-        `/${address}/erc20/transfers`,
-        {
+    async function getTxHistory(address) {
+      const [ethHistory, erc20History] = await Promise.all([
+        moralisApi.get(`/${address}`, {
+          params: { chain: "eth", order: "ASC" },
+        }),
+        moralisApi.get(`/${address}/erc20/transfers`, {
           params: {
             chain: chainId,
             contract_addresses: [usdcAddress],
             order: "ASC",
           },
-        }
-      );
+        }),
+      ]);
 
       await sleep(50);
 
-      return erc20TransferHistory ? erc20TransferHistory.result : [];
-    }
-
-    async function getErc20TokenBalance() {
-      const { data: erc20TokenBalances } = await moralisApi.get(
-        `/${userAddress}/erc20`,
-        {
-          params: {
-            chain: chainId,
-            token_addresses: [usdcAddress],
-          },
-        }
+      const ethTransactions = (ethHistory?.data?.result || []).map((tx) => ({
+        ...tx,
+        type: "NATIVE",
+        decimals: 18, // ETH has 18 decimals
+      }));
+      const erc20Transactions = (erc20History?.data?.result || []).map(
+        (tx) => ({
+          ...tx,
+          type: "ERC20",
+          decimals: tx.decimals || 6, // Use token's decimals if available, default to 6 for USDC
+        })
       );
 
-      return erc20TokenBalances;
+      return {
+        ethTransactions,
+        erc20Transactions,
+      };
     }
 
-    async function getTokenPrice() {
-      const { data: tokenPrice } = await moralisApi.get(
+    async function getTokenPrices() {
+      const { data: ethPrice } = await moralisApi.get(
+        `/erc20/${wethAddress}/price`,
+        { params: { chain: chainId } }
+      );
+      const { data: usdcPrice } = await moralisApi.get(
         `/erc20/${usdcAddress}/price`,
-        {
-          params: {
-            chain: chainId,
-          },
-        }
+        { params: { chain: chainId } }
       );
-
-      return tokenPrice;
+      return { ethPrice, usdcPrice };
     }
 
     const mockUsdcPrice = {
@@ -1087,86 +1098,89 @@ export const userRoutes = (app, _, done) => {
     try {
       const stealthAddresses = user.aliases
         .flatMap((alias) => alias.stealthAddresses)
-        .map((sa) => sa.address);
+        .map((sa) => sa.address.toLowerCase());
+      const stealthAddressSet = new Set(stealthAddresses);
 
-      const stealthAddressSet = new Set(
-        stealthAddresses.map((sa) => sa.toLowerCase())
+      const { ethPrice, usdcPrice } = await getTokenPrices();
+
+      const transactionPromises = stealthAddresses.map((address) =>
+        getTxHistory(address)
+      );
+      const allTransactionResults = await Promise.all(transactionPromises);
+
+      const allTransactions = [];
+      allTransactionResults.forEach(
+        ({ ethTransactions, erc20Transactions }) => {
+          allTransactions.push(...ethTransactions, ...erc20Transactions);
+        }
       );
 
-      const allTransferHistories = await Promise.all(
-        stealthAddresses.map((address) => getErc20TxHistory(address))
-      );
-
-      const transferHistory = allTransferHistories.flat();
-
-      const [currentBalanceData, priceData] = await Promise.all([
-        getErc20TokenBalance(),
-        isTestnet ? [mockUsdcPrice] : getTokenPrice(),
-      ]);
-
-      const currentPriceUSD = priceData[0].usdPrice;
-
-      // Ensure transfer history is sorted by time (ascending) if not already
-      transferHistory.sort(
+      allTransactions.sort(
         (a, b) => new Date(a.block_timestamp) - new Date(b.block_timestamp)
       );
 
-      // Find the first incoming transaction to set the genesis balance
-      const genesisTransaction = transferHistory.find((tx) =>
-        stealthAddressSet.has(tx.to_address?.toLowerCase())
-      );
+      let runningEthBalance = 0;
+      let runningErc20Balance = 0;
 
-      if (!genesisTransaction) {
-        return reply.send([]);
-      }
+      const balanceHistory = [];
 
-      // Set the genesis balance based on the first incoming transfer
-      const decimals = parseInt(currentBalanceData[0]?.decimals || 6);
-      const decimalFactor = Math.pow(10, decimals);
-      let runningBalance = parseFloat(genesisTransaction.value) / decimalFactor;
+      const genesisTimestamp = allTransactions[0]
+        ? new Date(allTransactions[0].block_timestamp).getTime() - 1
+        : Date.now();
 
-      // Array to store historical balances
-      const balanceHistory = [
-        {
-          timestamp: new Date(genesisTransaction.block_timestamp).getTime(),
-          date: new Date(genesisTransaction.block_timestamp).toISOString(),
-          balance: parseFloat(runningBalance.toFixed(6)),
-          balanceUSD: parseFloat((runningBalance * currentPriceUSD).toFixed(2)),
-        },
-      ];
+      balanceHistory.push({
+        timestamp: genesisTimestamp,
+        date: new Date(genesisTimestamp).toISOString(),
+        balance: 0,
+      });
 
-      // Process the remaining transactions after the genesis transaction
-      transferHistory.forEach((tx) => {
+      allTransactions.forEach((tx) => {
         const txDate = new Date(tx.block_timestamp);
-        const value = parseFloat(tx.value) / decimalFactor;
+        const value =
+          tx.type === "ERC20"
+            ? parseFloat(ethers.formatUnits(tx.value, tx.decimals)) // Convert ERC-20 based on its decimals
+            : parseFloat(ethers.formatUnits(tx.value, "ether")); // Convert ETH from Wei to Ether using ethers
 
-        // Skip the genesis transaction (already recorded)
-        if (tx === genesisTransaction) return;
-
-        // Adjust balance based on transaction direction
-        if (tx.to_address.toLowerCase() === userAddress.toLowerCase()) {
-          runningBalance += value; // Incoming transaction
-        } else if (
-          tx.from_address.toLowerCase() === userAddress.toLowerCase()
-        ) {
-          runningBalance -= value; // Outgoing transaction
+        // Update ETH or ERC-20 balance based on transaction type
+        if (tx.type === "ERC20") {
+          if (stealthAddressSet.has(tx.to_address.toLowerCase())) {
+            console.log("adding balance erc20");
+            runningErc20Balance += value; // Incoming ERC-20 transaction
+          } else if (stealthAddressSet.has(tx.from_address.toLowerCase())) {
+            runningErc20Balance -= value; // Outgoing ERC-20 transaction
+          }
+        } else if (tx.type === "NATIVE") {
+          if (stealthAddressSet.has(tx.to_address.toLowerCase())) {
+            console.log("adding balance native");
+            runningEthBalance += value; // Incoming ETH transaction
+          } else if (stealthAddressSet.has(tx.from_address.toLowerCase())) {
+            runningEthBalance -= value; // Outgoing ETH transaction
+          }
         }
 
+        runningEthBalance = Math.max(0, runningEthBalance);
+        runningErc20Balance = Math.max(0, runningErc20Balance);
+
+        // Calculate only the aggregate USD balance
+        const ethBalanceUSD = runningEthBalance * ethPrice.usdPrice;
+        const erc20BalanceUSD = runningErc20Balance * usdcPrice.usdPrice;
+        const aggregateBalanceUSD = ethBalanceUSD + erc20BalanceUSD;
+
+        // Append to USD balance history
         balanceHistory.push({
           timestamp: txDate.getTime(),
           date: txDate.toISOString(),
-          balance: parseFloat(runningBalance.toFixed(6)),
-          balanceUSD: parseFloat((runningBalance * currentPriceUSD).toFixed(2)),
+          balance: parseFloat(aggregateBalanceUSD.toFixed(2)),
         });
       });
 
       // Send the response
       return reply.send(balanceHistory);
     } catch (error) {
-      console.error("Error getting USDC balance history:", error);
+      console.error("Error getting chart balance history:", error);
       return reply.code(500).send({
         success: false,
-        message: "Error getting USDC balance history",
+        message: "Error getting chart balance history",
         error: error.message,
       });
     }
