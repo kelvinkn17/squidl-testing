@@ -1,6 +1,6 @@
-# SQUIDL - Your Privacy-Focused Payment Platform 🚀
+# SQUIDL - Stealth Addresses for Untraceable Payments 🦑
 
-![Squidl Logo](https://github.com/user-attachments/assets/e1034b67-7c7e-419f-b299-09265244b584)
+![squidl-label 1](https://github.com/user-attachments/assets/ea61ecdb-4294-4c31-903d-c66f765eedba)
 
 **SQUIDL** is a next-gen payment platform for freelancers, businesses, and individuals who prioritize security and anonymity. Built on **Oasis Protocol’s Sapphire** and enhanced with **Runtime Offchain Logic (ROFL)**, SQUIDL empowers private, secure, and untraceable transactions through stealth addresses.
 
