@@ -981,151 +981,260 @@ export const userRoutes = (app, _, done) => {
 
   // CHARTS DATA ENDPOINT FOR USER BALANCE HISTORY USE MORALIS API
 
+  // app.get("/wallet-assets/:username/charts-new", async (req, reply) => {
+  //   const { username } = req.params;
+  //   const { isTestnet = "false" } = req.query;
+
+  //   const user = await prismaClient.user.findFirst({
+  //     where: {
+  //       username,
+  //     },
+  //     include: {
+  //       aliases: {
+  //         include: {
+  //           stealthAddresses: {
+  //             where: {
+  //               isTransacted: true,
+  //             },
+  //             select: {
+  //               address: true,
+  //             },
+  //             take: 30,
+  //             orderBy: {
+  //               createdAt: "desc",
+  //             },
+  //           },
+  //         },
+  //       },
+  //       wallet: true,
+  //     },
+  //   });
+
+  //   const userAddress = user.wallet.address;
+
+  //   // USDC contract addresses
+  //   const USDC_ADDRESSES = {
+  //     mainnet: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  //     testnet: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // Sepolia USDC
+  //   };
+
+  //   const WETH_ADDRESSES = {
+  //     mainnet: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+  //     testnet: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", // Sepolia WETH
+  //   };
+
+  //   const chainId = isTestnet === "true" ? "sepolia" : "0x1"; // 0xaa36a7 for Sepolia, 0x1 for Ethereum mainnet
+  //   const usdcAddress =
+  //     isTestnet === "true" ? USDC_ADDRESSES.testnet : USDC_ADDRESSES.mainnet;
+  //   const wethAddress =
+  //     isTestnet === "true" ? WETH_ADDRESSES.testnet : WETH_ADDRESSES.mainnet;
+
+  //   async function getTxHistory(address) {
+  //     const [ethHistory, erc20History] = await Promise.all([
+  //       moralisApi.get(`/${address}`, {
+  //         params: { chain: "eth", order: "ASC" },
+  //       }),
+  //       moralisApi.get(`/${address}/erc20/transfers`, {
+  //         params: {
+  //           chain: chainId,
+  //           contract_addresses: [usdcAddress],
+  //           order: "ASC",
+  //         },
+  //       }),
+  //     ]);
+
+  //     await sleep(50);
+
+  //     const ethTransactions = (ethHistory?.data?.result || []).map((tx) => ({
+  //       ...tx,
+  //       type: "NATIVE",
+  //       decimals: 18, // ETH has 18 decimals
+  //     }));
+  //     const erc20Transactions = (erc20History?.data?.result || []).map(
+  //       (tx) => ({
+  //         ...tx,
+  //         type: "ERC20",
+  //         decimals: tx.decimals || 6, // Use token's decimals if available, default to 6 for USDC
+  //       })
+  //     );
+
+  //     return {
+  //       ethTransactions,
+  //       erc20Transactions,
+  //     };
+  //   }
+
+  //   async function getTokenPrices() {
+  //     const { data: ethPrice } = await moralisApi.get(
+  //       `/erc20/${wethAddress}/price`,
+  //       { params: { chain: chainId } }
+  //     );
+  //     const { data: usdcPrice } = await moralisApi.get(
+  //       `/erc20/${usdcAddress}/price`,
+  //       { params: { chain: chainId } }
+  //     );
+  //     return { ethPrice, usdcPrice };
+  //   }
+
+  //   const mockUsdcPrice = {
+  //     tokenName: "USD Coin",
+  //     tokenSymbol: "USDC",
+  //     tokenLogo:
+  //       "https://cdn.moralis.io/eth/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.png",
+  //     tokenDecimals: "6",
+  //     usdPrice: 1.0,
+  //     usdPriceFormatted: "1.00",
+  //     "24hrPercentChange": "0.00",
+  //     exchangeAddress: "0x1f98431c8ad98523631ae4a59f267346ea31f984",
+  //     exchangeName: "Uniswap v3",
+  //     tokenAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  //     toBlock: "16314545",
+  //     possibleSpam: "false",
+  //     verifiedContract: true,
+  //     pairAddress: "0x1f98431c8ad98523631ae4a59f267346ea31f984",
+  //     pairTotalLiquidityUsd: "500000000",
+  //   };
+
+  //   try {
+  //     const stealthAddresses = user.aliases
+  //       .flatMap((alias) => alias.stealthAddresses)
+  //       .map((sa) => sa.address.toLowerCase());
+  //     const stealthAddressSet = new Set(stealthAddresses);
+
+  //     const { ethPrice, usdcPrice } = await getTokenPrices();
+
+  //     const transactionPromises = stealthAddresses.map((address) =>
+  //       getTxHistory(address)
+  //     );
+  //     const allTransactionResults = await Promise.all(transactionPromises);
+
+  //     const allTransactions = [];
+  //     allTransactionResults.forEach(
+  //       ({ ethTransactions, erc20Transactions }) => {
+  //         allTransactions.push(...ethTransactions, ...erc20Transactions);
+  //       }
+  //     );
+
+  //     allTransactions.sort(
+  //       (a, b) => new Date(a.block_timestamp) - new Date(b.block_timestamp)
+  //     );
+
+  //     let runningEthBalance = 0;
+  //     let runningErc20Balance = 0;
+
+  //     const balanceHistory = [];
+
+  //     const genesisTimestamp = allTransactions[0]
+  //       ? new Date(allTransactions[0].block_timestamp).getTime() - 1
+  //       : Date.now();
+
+  //     balanceHistory.push({
+  //       timestamp: genesisTimestamp,
+  //       date: new Date(genesisTimestamp).toISOString(),
+  //       balance: 0,
+  //     });
+
+  //     allTransactions.forEach((tx) => {
+  //       const txDate = new Date(tx.block_timestamp);
+  //       const value =
+  //         tx.type === "ERC20"
+  //           ? parseFloat(ethers.formatUnits(tx.value, tx.decimals)) // Convert ERC-20 based on its decimals
+  //           : parseFloat(ethers.formatUnits(tx.value, "ether")); // Convert ETH from Wei to Ether using ethers
+
+  //       // Update ETH or ERC-20 balance based on transaction type
+  //       if (tx.type === "ERC20") {
+  //         if (stealthAddressSet.has(tx.to_address.toLowerCase())) {
+  //           console.log("adding balance erc20");
+  //           runningErc20Balance += value; // Incoming ERC-20 transaction
+  //         } else if (stealthAddressSet.has(tx.from_address.toLowerCase())) {
+  //           runningErc20Balance -= value; // Outgoing ERC-20 transaction
+  //         }
+  //       } else if (tx.type === "NATIVE") {
+  //         if (stealthAddressSet.has(tx.to_address.toLowerCase())) {
+  //           console.log("adding balance native");
+  //           runningEthBalance += value; // Incoming ETH transaction
+  //         } else if (stealthAddressSet.has(tx.from_address.toLowerCase())) {
+  //           runningEthBalance -= value; // Outgoing ETH transaction
+  //         }
+  //       }
+
+  //       runningEthBalance = Math.max(0, runningEthBalance);
+  //       runningErc20Balance = Math.max(0, runningErc20Balance);
+
+  //       // Calculate only the aggregate USD balance
+  //       const ethBalanceUSD = runningEthBalance * ethPrice.usdPrice;
+  //       const erc20BalanceUSD = runningErc20Balance * usdcPrice.usdPrice;
+  //       const aggregateBalanceUSD = ethBalanceUSD + erc20BalanceUSD;
+
+  //       // Append to USD balance history
+  //       balanceHistory.push({
+  //         timestamp: txDate.getTime(),
+  //         date: txDate.toISOString(),
+  //         balance: parseFloat(aggregateBalanceUSD.toFixed(2)),
+  //       });
+  //     });
+
+  //     // Send the response
+  //     return reply.send(balanceHistory);
+  //   } catch (error) {
+  //     console.error("Error getting chart balance history:", error);
+  //     return reply.code(500).send({
+  //       success: false,
+  //       message: "Error getting chart balance history",
+  //       error: error.message,
+  //     });
+  //   }
+  // });
+
   app.get("/wallet-assets/:username/charts-new", async (req, reply) => {
     const { username } = req.params;
     const { isTestnet = "false" } = req.query;
 
-    const user = await prismaClient.user.findFirst({
-      where: {
-        username,
-      },
-      include: {
-        aliases: {
-          include: {
-            stealthAddresses: {
-              where: {
-                isTransacted: true,
-              },
-              select: {
-                address: true,
-              },
-              take: 30,
-              orderBy: {
-                createdAt: "desc",
+    try {
+      const user = await prismaClient.user.findFirst({
+        where: {
+          username,
+        },
+        include: {
+          aliases: {
+            include: {
+              stealthAddresses: {
+                where: {
+                  isTransacted: true,
+                },
+                include: {
+                  transactions: {
+                    orderBy: {
+                      createdAt: "asc",
+                    },
+                  },
+                },
+                take: 50,
+                orderBy: {
+                  createdAt: "desc",
+                },
               },
             },
           },
+          wallet: true,
         },
-        wallet: true,
-      },
-    });
+      });
 
-    const userAddress = user.wallet.address;
+      const allStealthAddresses = user.aliases.flatMap((alias) =>
+        alias.stealthAddresses.map((sa) => sa.address.toLowerCase())
+      );
+      const stealthAddressSet = new Set(allStealthAddresses);
 
-    // USDC contract addresses
-    const USDC_ADDRESSES = {
-      mainnet: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      testnet: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // Sepolia USDC
-    };
-
-    const WETH_ADDRESSES = {
-      mainnet: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-      testnet: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", // Sepolia WETH
-    };
-
-    const chainId = isTestnet === "true" ? "sepolia" : "0x1"; // 0xaa36a7 for Sepolia, 0x1 for Ethereum mainnet
-    const usdcAddress =
-      isTestnet === "true" ? USDC_ADDRESSES.testnet : USDC_ADDRESSES.mainnet;
-    const wethAddress =
-      isTestnet === "true" ? WETH_ADDRESSES.testnet : WETH_ADDRESSES.mainnet;
-
-    async function getTxHistory(address) {
-      const [ethHistory, erc20History] = await Promise.all([
-        moralisApi.get(`/${address}`, {
-          params: { chain: "eth", order: "ASC" },
-        }),
-        moralisApi.get(`/${address}/erc20/transfers`, {
-          params: {
-            chain: chainId,
-            contract_addresses: [usdcAddress],
-            order: "ASC",
-          },
-        }),
-      ]);
-
-      await sleep(50);
-
-      const ethTransactions = (ethHistory?.data?.result || []).map((tx) => ({
-        ...tx,
-        type: "NATIVE",
-        decimals: 18, // ETH has 18 decimals
-      }));
-      const erc20Transactions = (erc20History?.data?.result || []).map(
-        (tx) => ({
-          ...tx,
-          type: "ERC20",
-          decimals: tx.decimals || 6, // Use token's decimals if available, default to 6 for USDC
-        })
+      const allTransactions = user.aliases.flatMap((alias) =>
+        alias.stealthAddresses.flatMap((addr) => addr.transactions)
       );
 
-      return {
-        ethTransactions,
-        erc20Transactions,
-      };
-    }
-
-    async function getTokenPrices() {
-      const { data: ethPrice } = await moralisApi.get(
-        `/erc20/${wethAddress}/price`,
-        { params: { chain: chainId } }
-      );
-      const { data: usdcPrice } = await moralisApi.get(
-        `/erc20/${usdcAddress}/price`,
-        { params: { chain: chainId } }
-      );
-      return { ethPrice, usdcPrice };
-    }
-
-    const mockUsdcPrice = {
-      tokenName: "USD Coin",
-      tokenSymbol: "USDC",
-      tokenLogo:
-        "https://cdn.moralis.io/eth/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.png",
-      tokenDecimals: "6",
-      usdPrice: 1.0,
-      usdPriceFormatted: "1.00",
-      "24hrPercentChange": "0.00",
-      exchangeAddress: "0x1f98431c8ad98523631ae4a59f267346ea31f984",
-      exchangeName: "Uniswap v3",
-      tokenAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-      toBlock: "16314545",
-      possibleSpam: "false",
-      verifiedContract: true,
-      pairAddress: "0x1f98431c8ad98523631ae4a59f267346ea31f984",
-      pairTotalLiquidityUsd: "500000000",
-    };
-
-    try {
-      const stealthAddresses = user.aliases
-        .flatMap((alias) => alias.stealthAddresses)
-        .map((sa) => sa.address.toLowerCase());
-      const stealthAddressSet = new Set(stealthAddresses);
-
-      const { ethPrice, usdcPrice } = await getTokenPrices();
-
-      const transactionPromises = stealthAddresses.map((address) =>
-        getTxHistory(address)
-      );
-      const allTransactionResults = await Promise.all(transactionPromises);
-
-      const allTransactions = [];
-      allTransactionResults.forEach(
-        ({ ethTransactions, erc20Transactions }) => {
-          allTransactions.push(...ethTransactions, ...erc20Transactions);
-        }
-      );
-
-      allTransactions.sort(
-        (a, b) => new Date(a.block_timestamp) - new Date(b.block_timestamp)
-      );
-
-      let runningEthBalance = 0;
-      let runningErc20Balance = 0;
+      let balance = 0;
 
       const balanceHistory = [];
 
       const genesisTimestamp = allTransactions[0]
-        ? new Date(allTransactions[0].block_timestamp).getTime() - 1
+        ? new Date(allTransactions[0].createdAt).getTime() - 1
         : Date.now();
 
       balanceHistory.push({
@@ -1134,47 +1243,45 @@ export const userRoutes = (app, _, done) => {
         balance: 0,
       });
 
-      allTransactions.forEach((tx) => {
-        const txDate = new Date(tx.block_timestamp);
-        const value =
-          tx.type === "ERC20"
-            ? parseFloat(ethers.formatUnits(tx.value, tx.decimals)) // Convert ERC-20 based on its decimals
-            : parseFloat(ethers.formatUnits(tx.value, "ether")); // Convert ETH from Wei to Ether using ethers
+      const tokenPromises = allTransactions.map((tx) =>
+        prismaClient.token.findFirst({
+          where: {
+            id: tx.tokenId,
+          },
+          include: {
+            stats: true,
+          },
+        })
+      );
+      const tokenInfos = await Promise.all(tokenPromises);
 
-        // Update ETH or ERC-20 balance based on transaction type
-        if (tx.type === "ERC20") {
-          if (stealthAddressSet.has(tx.to_address.toLowerCase())) {
-            console.log("adding balance erc20");
-            runningErc20Balance += value; // Incoming ERC-20 transaction
-          } else if (stealthAddressSet.has(tx.from_address.toLowerCase())) {
-            runningErc20Balance -= value; // Outgoing ERC-20 transaction
-          }
-        } else if (tx.type === "NATIVE") {
-          if (stealthAddressSet.has(tx.to_address.toLowerCase())) {
-            console.log("adding balance native");
-            runningEthBalance += value; // Incoming ETH transaction
-          } else if (stealthAddressSet.has(tx.from_address.toLowerCase())) {
-            runningEthBalance -= value; // Outgoing ETH transaction
-          }
+      for (let i = 0; i < allTransactions.length; i++) {
+        const tx = allTransactions[i];
+        const tokenInfo = tokenInfos[i];
+        const tokenPrice = tokenInfo.stats.priceUSD;
+
+        const txDate = new Date(tx.createdAt);
+        const value = parseFloat(
+          ethers.formatUnits(tx.value, tokenInfo.decimals)
+        );
+
+        if (stealthAddressSet.has(tx.toAddress.toLowerCase())) {
+          balance += value;
+        } else if (stealthAddressSet.has(tx.fromAddress.toLowerCase())) {
+          balance -= value;
         }
 
-        runningEthBalance = Math.max(0, runningEthBalance);
-        runningErc20Balance = Math.max(0, runningErc20Balance);
+        balance = Math.max(0, balance);
 
-        // Calculate only the aggregate USD balance
-        const ethBalanceUSD = runningEthBalance * ethPrice.usdPrice;
-        const erc20BalanceUSD = runningErc20Balance * usdcPrice.usdPrice;
-        const aggregateBalanceUSD = ethBalanceUSD + erc20BalanceUSD;
+        const balanceUsd = balance * tokenPrice;
 
-        // Append to USD balance history
         balanceHistory.push({
           timestamp: txDate.getTime(),
           date: txDate.toISOString(),
-          balance: parseFloat(aggregateBalanceUSD.toFixed(2)),
+          balance: parseFloat(balanceUsd.toFixed(2)),
         });
-      });
+      }
 
-      // Send the response
       return reply.send(balanceHistory);
     } catch (error) {
       console.error("Error getting chart balance history:", error);
