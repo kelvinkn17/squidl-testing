@@ -10,13 +10,13 @@ export function aggregateBalances(data) {
     erc20: {},
   };
 
-  // Remove the data[i].nativeBalances empty  and data[i].erc20Balances empty
+  // Remove wallets without balances in either native or ERC20
   data = data.filter(
     (wallet) =>
       wallet.nativeBalances.length > 0 || wallet.erc20Balances.length > 0
   );
 
-  // Remove any data[i].nativeBalances[i] === undefined or data[i].erc20Balances[i] === undefined
+  // Filter out undefined entries in native and ERC20 balances
   data.forEach((wallet) => {
     wallet.nativeBalances = wallet.nativeBalances.filter(
       (native) => native !== undefined
@@ -38,7 +38,7 @@ export function aggregateBalances(data) {
         chainName,
         chainLogo,
       } = native;
-      const key = `${chainId}_${nativeToken.symbol}`; // Use symbol as part of key for uniqueness
+      const key = `${chainId}_${nativeToken.symbol}`;
 
       if (!aggregatedBalances.native[key]) {
         aggregatedBalances.native[key] = {
@@ -52,8 +52,9 @@ export function aggregateBalances(data) {
         };
       }
 
+      // Accumulate balance and calculate priceUSD as balance * priceUSD
       aggregatedBalances.native[key].balance += balance;
-      aggregatedBalances.native[key].priceUSD += priceUSD;
+      aggregatedBalances.native[key].priceUSD += balance * priceUSD;
     });
 
     // Process ERC20 token balances
@@ -65,7 +66,6 @@ export function aggregateBalances(data) {
         token: { name, symbol, decimals, priceUSD, logo },
         chainName,
         chainLogo,
-        balanceUSD,
       } = erc20;
       const key = `${chainId}_${address}`;
 
@@ -84,11 +84,13 @@ export function aggregateBalances(data) {
             symbol,
             priceUSD,
           },
-          priceUSD: balanceUSD,
+          priceUSD: 0,
         };
       }
 
+      // Accumulate balance and calculate priceUSD as balance * priceUSD
       aggregatedBalances.erc20[key].balance += balance;
+      aggregatedBalances.erc20[key].priceUSD += balance * priceUSD;
     });
   });
 
