@@ -1111,13 +1111,27 @@ export const userRoutes = (app, _, done) => {
         (a, b) => new Date(a.block_timestamp) - new Date(b.block_timestamp)
       );
 
+      const balanceHistory = [
+        {
+          timestamp:
+            new Date(
+              transferHistory[0]?.block_timestamp || Date.now()
+            ).getTime() - 1,
+          date: new Date(
+            transferHistory[0]?.block_timestamp || Date.now()
+          ).toISOString(),
+          balance: 0,
+          balanceUSD: 0,
+        },
+      ];
+
       // Find the first incoming transaction to set the genesis balance
       const genesisTransaction = transferHistory.find((tx) =>
         stealthAddressSet.has(tx.to_address?.toLowerCase())
       );
 
       if (!genesisTransaction) {
-        return reply.send([]);
+        return reply.send(balanceHistory);
       }
 
       // Set the genesis balance based on the first incoming transfer
@@ -1125,15 +1139,12 @@ export const userRoutes = (app, _, done) => {
       const decimalFactor = Math.pow(10, decimals);
       let runningBalance = parseFloat(genesisTransaction.value) / decimalFactor;
 
-      // Array to store historical balances
-      const balanceHistory = [
-        {
-          timestamp: new Date(genesisTransaction.block_timestamp).getTime(),
-          date: new Date(genesisTransaction.block_timestamp).toISOString(),
-          balance: parseFloat(runningBalance.toFixed(6)),
-          balanceUSD: parseFloat((runningBalance * currentPriceUSD).toFixed(2)),
-        },
-      ];
+      balanceHistory.push({
+        timestamp: new Date(genesisTransaction.block_timestamp).getTime(),
+        date: new Date(genesisTransaction.block_timestamp).toISOString(),
+        balance: parseFloat(runningBalance.toFixed(6)),
+        balanceUSD: parseFloat((runningBalance * currentPriceUSD).toFixed(2)),
+      });
 
       // Process the remaining transactions after the genesis transaction
       transferHistory.forEach((tx) => {
