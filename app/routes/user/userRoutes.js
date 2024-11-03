@@ -1204,6 +1204,9 @@ export const userRoutes = (app, _, done) => {
                 },
                 include: {
                   transactions: {
+                    where: {
+                      chainId: 1,
+                    },
                     orderBy: {
                       createdAt: "asc",
                     },
@@ -1243,26 +1246,46 @@ export const userRoutes = (app, _, done) => {
         balance: 0,
       });
 
-      const tokenPromises = allTransactions.map((tx) =>
-        prismaClient.token.findFirst({
-          where: {
-            id: tx.tokenId,
-          },
-          include: {
-            stats: true,
-          },
-        })
-      );
-      const tokenInfos = await Promise.all(tokenPromises);
+      const tokenPricePromises = allTransactions.map(async (tx) => {
+        const isNative = tx.isNative;
+
+        const token = isNative
+          ? await prismaClient.nativeToken.findFirst({
+              where: {
+                chainId: 1,
+              },
+            })
+          : await prismaClient.token.findFirst({
+              where: {
+                id: tx.tokenId,
+              },
+              include: {
+                stats: true,
+              },
+            });
+
+        const price = isNative ? token.priceUSD : token.stats.priceUSD;
+
+        return {
+          isNative,
+          price,
+          decimals: isNative ? 18 : token.decimals,
+        };
+      });
+
+      const tokenInfos = await Promise.all(tokenPricePromises);
 
       for (let i = 0; i < allTransactions.length; i++) {
         const tx = allTransactions[i];
         const tokenInfo = tokenInfos[i];
-        const tokenPrice = tokenInfo.stats.priceUSD;
+        const tokenPrice = tokenInfo.price;
 
         const txDate = new Date(tx.createdAt);
         const value = parseFloat(
-          ethers.formatUnits(tx.value, tokenInfo.decimals)
+          ethers.formatUnits(
+            tx.value,
+            tokenInfo.isNative ? "ether" : tokenInfo.decimals
+          )
         );
 
         if (stealthAddressSet.has(tx.toAddress.toLowerCase())) {
