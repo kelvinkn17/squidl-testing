@@ -412,7 +412,7 @@ export const userRoutes = (app, _, done) => {
                     },
                   },
                 },
-                take: 100,
+                take: 200,
               },
             },
             orderBy: {
@@ -1212,7 +1212,7 @@ export const userRoutes = (app, _, done) => {
                     },
                   },
                 },
-                take: 100,
+                take: 200,
                 orderBy: {
                   createdAt: "desc",
                 },
