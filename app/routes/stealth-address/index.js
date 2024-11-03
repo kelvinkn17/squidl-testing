@@ -163,9 +163,6 @@ export const stealthAddressRoutes = (app, _, done) => {
 
   app.get(
     "/aliases/check",
-    {
-      preHandler: [authMiddleware],
-    },
     async (req, res) => {
       // Check if the alias is available
       try {

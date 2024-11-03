@@ -2,6 +2,8 @@ import * as sapphire from '@oasisprotocol/sapphire-paratime';
 import { ethers } from 'ethers';
 import fs from 'fs';
 import path from 'path';
+import { prismaClient } from '../../db/prisma.js';
+import { sleep } from '../../../utils/miscUtils.js';
 
 const __dirname = path.resolve();
 export const StealthSignerABI = JSON.parse(fs.readFileSync(path.join(__dirname, 'app/lib/contracts/oasis/abi/StealthSigner.json'), 'utf8'));
@@ -19,8 +21,8 @@ export const OASIS_CONTRACT = {
     }
   },
   testnet: {
-    address: "0x201F0a5Ad2dD0ac254E808D4D6961D0aceaF3F00",
-    explorerUrl: "https://explorer.oasis.io/testnet/sapphire/address/0x201F0a5Ad2dD0ac254E808D4D6961D0aceaF3F00",
+    address: process.env.SQUIDL_STEALTHSIGNER_CONTRACT_ADDRESS,
+    explorerUrl: `https://explorer.oasis.io/testnet/sapphire/address/${process.env.SQUIDL_STEALTHSIGNER_CONTRACT_ADDRESS}`,
     network: {
       id: 23295,
       name: "Oasis Sapphire Testnet",
@@ -43,7 +45,7 @@ export const stealthSignerGenerateStealthAddress = async ({
     const network = Object.values(OASIS_CONTRACT).find(
       (network) => network.network.id === chainId
     ).network;
-    if(!network){
+    if (!network) {
       throw new Error('Invalid chainId');
     }
     const provider = sapphire.wrap(ethers.getDefaultProvider(network.rpcUrl));
@@ -145,7 +147,7 @@ export const stealthSignerCheckStealthAddress = async ({
     console.log('stealthAddress check:', stealthAddress); // Expected: 0xcaFB78fD713eBfE220E7C02e6005080Db54E39a9
     if (stealthAddress === expected) {
       console.log('Stealth address check passed');
-    }else{
+    } else {
       console.error('Stealth address check failed');
     }
   } catch (error) {
@@ -169,3 +171,36 @@ export const stealthSignerCheckStealthAddress = async ({
 //   viewHint: "0x1f",
 //   expected: "0xF366E7D225d99AB2F5fA3416fC2Da2D6497F0747"
 // })
+
+export const stealthSignerSimulateAnnounce = async ({
+  chainId,
+  k,
+  ephemeralPub,
+  viewHint,
+}) => {
+  try {
+    const network = Object.values(OASIS_CONTRACT).find(
+      (network) => network.network.id === chainId
+    ).network;
+
+    const provider = sapphire.wrap(ethers.getDefaultProvider(network.rpcUrl));
+    const signer = new ethers.Wallet(process.env.PAYMASTER_PK, provider);
+
+    const contract = new ethers.Contract(
+      OASIS_CONTRACT.testnet.address,
+      StealthSignerABI.abi,
+      signer
+    );
+
+    const announce = await contract.announce(
+      k,
+      ephemeralPub,
+      ethers.getBytes(viewHint)
+    );
+
+    console.log('announce', announce);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
