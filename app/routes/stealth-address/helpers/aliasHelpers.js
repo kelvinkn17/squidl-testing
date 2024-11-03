@@ -7,6 +7,10 @@ export const getNextAliasKey = async () => {
     },
   });
 
+  if(allUserAliasCount.length === 0) {
+    return 1;
+  }
+
   const lastAliasKey = allUserAliasCount[0].key;
   const nextAliasKey = lastAliasKey + 1;
 
