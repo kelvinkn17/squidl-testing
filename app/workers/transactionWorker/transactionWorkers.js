@@ -156,7 +156,7 @@ export const transactionWorker = (app, _, done) => {
   };
 
 
-  cron.schedule("*/30 * * * * *", () => {
+  cron.schedule("*/15 * * * * *", () => {
     console.log("Running stealth address transaction check...");
     handleCheckStealthAddressTransaction();
   })
