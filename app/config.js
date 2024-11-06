@@ -1,11 +1,29 @@
+
+export const INFURA_API_KEYS = [
+  process.env.INFURA_API_KEY_1,
+  process.env.INFURA_API_KEY_2,
+  process.env.INFURA_API_KEY_3
+].filter(key => key !== null && key !== undefined);
+
+let infuraKeyIndex = 0;
+export const getInfuraKey = () => {
+  const key = INFURA_API_KEYS[infuraKeyIndex];
+  console.log("Using Infura key: ", key);
+  infuraKeyIndex = (infuraKeyIndex + 1) % INFURA_API_KEYS.length;
+  return key;
+}
+
 export const CHAINS = [
   /* --------------------------------- Testnet -------------------------------- */
   {
     id: 11155111,
     isTestnet: true,
     name: "Ethereum Sepolia",
+    dexsChainId: "ethereum",
     chainlistUrl: "https://chainlist.org/chain/11155111",
-    rpcUrl: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    get rpcUrl() {
+      return `https://sepolia.infura.io/v3/${getInfuraKey()}`;
+    },
     nativeToken: "ETH",
     blockExplorerUrl: "https://sepolia.etherscan.io/",
     imageUrl:
@@ -16,12 +34,14 @@ export const CHAINS = [
       logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
       originalChainId: 1,
       wrappedTokenAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      pairAddress: "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640"
     }
   },
   {
     id: 23295,
     isTestnet: true,
     name: "Oasis Sapphire Testnet",
+    dexsChainId: "oasissapphire",
     chainlistUrl: "https://chainlist.org/chain/23295",
     rpcUrl: "https://testnet.sapphire.oasis.io",
     nativeToken: "TEST",
@@ -35,6 +55,7 @@ export const CHAINS = [
       logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/oasis.svg",
       originalChainId: 23294,
       wrappedTokenAddress: "0x21c718c22d52d0f3a789b752d4c2fd5908a8a733",
+      pairAddress: "0x04a590b38438455792a4b906c9dc63b7aa0ca316"
     }
   },
   /* --------------------------------- Mainnet -------------------------------- */
@@ -42,8 +63,11 @@ export const CHAINS = [
     id: 1,
     isTestnet: false,
     name: "Ethereum Mainnet",
+    dexsChainId: "ethereum",
     chainlistUrl: "https://chainlist.org/chain/1",
-    rpcUrl: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    get rpcUrl() {
+      return `https://mainnet.infura.io/v3/${getInfuraKey()}`;
+    },
     nativeToken: "ETH",
     blockExplorerUrl: "https://etherscan.io",
     imageUrl:
@@ -54,6 +78,7 @@ export const CHAINS = [
       logo: "https://filebucketz.sgp1.cdn.digitaloceanspaces.com/misc/chains/ethereum.svg",
       originalChainId: 1,
       wrappedTokenAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      pairAddress: "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640"
     }
   },
   // {
@@ -61,8 +86,6 @@ export const CHAINS = [
   //   name: "Binance Smart Chain",
   //   isTestnet: false,
   //   chainlistUrl: "https://chainlist.org/chain/56",
-  //   rpcUrl:
-  //     `https://bsc-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
   //   nativeToken: "BNB",
   //   blockExplorerUrl: "https://bscscan.com/",
   //   imageUrl:
